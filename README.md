@@ -52,13 +52,21 @@ Ky projekt adreson një **mungesë të një platforme të strukturuar dhe të be
 
 ## Struktura e Projektit
 local-services-marketplace
+
 │
+
 ├── frontend # UI dhe logjika e ndërfaqes
+
 ├── backend # Serveri dhe REST API
+
 ├── database # Skema e databazës
+
 ├── docs # Dokumentimi i projektit
+
 ├── README.md # Përshkrimi kryesor i projektit
+
 ├── .gitignore # File të përjashtuara nga Git
+
 └── package.json # Varietete dhe dependencies
 
 
@@ -66,7 +74,7 @@ local-services-marketplace
 
 ## Arsyetimi dhe Vlera për Komunitetin
 
-Ky projekt është i rëndësishëm për Kosovën sepse:
+Ky projekt është i rëndësishëm sepse:
 
 - Zgjidh problemin e mungesës së një platforme të besueshme për shërbime lokale  
 - Përmirëson transparencën e çmimeve dhe reputacionit të ofruesve  
