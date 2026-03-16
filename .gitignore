@@ -1,6 +1,23 @@
+# Node.js dependencies
 node_modules/
+
+# Env files (API keys, database credentials)
 .env
-.DS_Store
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
 dist/
 build/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# React specific
+coverage/
+*.local
