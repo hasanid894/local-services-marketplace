@@ -1,3 +1,0 @@
-Ky folder është rezervuar për file-t e testimeve për projektin Local Services Marketplace.
-
-File-t e ardhshme për testime të frontend, backend dhe testime integrimi do të shtohen këtu.
