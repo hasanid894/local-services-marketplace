@@ -1,7 +1,3 @@
-const FileRepository = require('../data/FileRepository');
-const User = require('../models/User');
-const path = require('path');
- 
 /**
  * UserService - Logjika e biznesit për Users.
  *
@@ -13,12 +9,8 @@ const path = require('path');
  * - Varet nga IRepository (abstrakti), jo nga implementimi konkret.
  */
 class UserService {
-  constructor() {
-    this.repository = new FileRepository(
-      path.join(__dirname, '../data/csv/users.csv'),
-      User.fromCSV,
-      User.csvHeader
-    );
+  constructor(repository) {
+    this.repository = repository;
   }
  
   getAllUsers() {
@@ -36,13 +28,24 @@ class UserService {
   createUser({ name, email, passwordHash, role = 'Customer', location = '' }) {
     const existing = this.getUserByEmail(email);
     if (existing) throw new Error('Email already registered.');
-    const user = new User(null, name, email, passwordHash, role, location);
+
+   const user = new (require('../models/User'))(
+      null,
+      name,
+      email,
+      passwordHash,
+      role,
+      location
+    );
+
     return this.repository.add(user);
+    
   }
  
   updateUser(id, data) {
     const user = this.repository.getById(id);
     if (!user) throw new Error('User not found.');
+   
     return this.repository.update(id, data);
   }
  
