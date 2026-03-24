@@ -17,14 +17,14 @@ exports.getUsers = (req, res) => {
 
 exports.getUser = (req, res) => {
   const user = service.getUserById(Number(req.params.id));
-  if (!user) return res.status(404).send('Not found');
+  if (!user) return res.status(404).json({ error: 'Not found' });
   res.json(user);
 };
 
 exports.createUser = (req, res) => {
   try {
     const user = service.createUser(req.body);
-    res.json(user);
+    res.status(201).json(user);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
