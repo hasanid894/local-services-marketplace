@@ -1,16 +1,16 @@
-# System Architecture – Local Services Marketplace
+# Arkitektura e Sistemit – Local Services Marketplace
 
-## 1. Introduction
+## 1. Hyrje
 
-This system is a Local Services Marketplace implemented using a **layered architecture** that enforces separation of concerns, modularity, and scalability.
+Ky sistem përfaqëson një platformë për tregun e shërbimeve lokale, e implementuar me një **arkitekturë me shtresa (layered architecture)**.
 
-The current implementation uses **file-based persistence (CSV)** while being explicitly designed for **future database integration**. This ensures that the system can evolve without modifying its business logic.
+Sistemi aktual përdor **ruajtje në file (CSV)**, ndërsa është projektuar në mënyrë të tillë që të mundësojë **integrim të lehtë me bazë të dhënash (database)** në të ardhmen, pa ndryshuar logjikën e biznesit.
 
 ---
 
-## 2. High-Level Architecture
+## 2. Arkitektura e Përgjithshme
 
-The system is structured into the following layers:
+Sistemi është i strukturuar në bazë të këtyre shtresave:
 
 Client (Frontend)
 
@@ -32,95 +32,94 @@ Services (Business Logic)
 
   ↓
     
-Repository (Abstraction Layer)
+Repository (Abstraksioni)
 
   ↓
     
-FileRepository (Current Implementation)
+FileRepository (Implementimi aktual)
 
   ↓
     
-CSV Storage
+CSV Files
 
 
 ---
 
-## 3. Request Processing Pipeline
+## 3.Rrjedha e Kërkesave (Request Flow)
 
-Every HTTP request follows a defined execution flow:
+Çdo kërkesë HTTP kalon përmes këtyre hapave:
 
-1. Client sends an HTTP request
-2. Request is handled by **Routes**
-3. Middleware executes (authentication, validation, error handling)
-4. Controller processes the request
-5. Controller delegates logic to Service layer
-6. Service interacts with Repository
-7. Repository accesses data (CSV files)
-8. Response is returned to the client
+1. Klienti dërgon kërkesë
+2. Kërkesa përpunohet nga **Routes**
+3. Middleware ekzekutohet (autentikim, menaxhim gabimesh)
+4. Controller pranon kërkesën
+5. Controller thërret Service layer
+6. Service aplikon logjikën e biznesit
+7. Service komunikon me Repository
+8. Repository ruan/merr të dhëna nga file
+9. Kthehet përgjigja te klienti
 
-This pipeline ensures:
-- Structured request handling
-- Security enforcement
-- Separation of concerns
-
----
-
-## 4. Layer Responsibilities
-
-### 4.1 Routes Layer
-
-- Defines API endpoints
-- Maps HTTP methods to controllers
-- Example:
-  - `authRoutes.js`
-  - `userRoutes.js`
-  - `serviceRoutes.js`
-
-Routes act as the **entry point** of the backend.
+Ky proces siguron:
+- Strukturë të qartë
+- Siguri përmes middleware
+- Ndarje të përgjegjësive
 
 ---
 
-### 4.2 Middleware Layer
+## 4.Përgjegjësitë e shtresave të sistemit
 
-Middleware handles **cross-cutting concerns**:
+### 4.1 Routes
 
-- Authentication (`authMiddleware.js`)
-- Error handling (`errorHandler.js`)
+- Pika hyrëse e kërkesave HTTP
+- Mapojnë endpoint-et me controller-at
 
-Middleware executes **before controllers**, ensuring requests are valid and secure.
+Shembuj:
+- `authRoutes.js`
+- `userRoutes.js`
+- `serviceRoutes.js`
+
+---
+
+### 4.2 Middleware
+
+Middleware përdoret për funksione të përbashkëta (cross-cutting concerns):
+
+- Autentikim (`authMiddleware`)
+- Menaxhim gabimesh (`errorHandler`)
+
+Middleware ekzekutohet **para controller-it**.
 
 ---
 
 ### 4.3 Controllers
 
-- Handle incoming requests and outgoing responses
-- Do not contain business logic
-- Call service layer methods
-
+- Marrin kërkesat nga routes
+- Thërrasin service layer
+- Nuk përmbajnë logjikë biznesi
 ---
 
 ### 4.4 Services (Business Logic Layer)
 
-- Contain all business rules and logic
-- Coordinate operations between controllers and repositories
-- Independent of storage implementation
+- Përmbajnë gjithë logjikën e aplikacionit
+- Janë të pavarura nga mënyra e ruajtjes së të dhënave
 
-Examples:
+Shembuj:
 - `UserService`
 - `BookingService`
 - `ReviewService`
 - `ServiceService`
 - `AuthService`
 
+
 ---
 
-### 4.5 Repository Layer
+### 4.5 Repositoriy Layer (Shtresa e Abstraksionit)
 
-The system applies the **Repository Pattern**.
+Ky sistem përdor **Repository Pattern**.
 
 #### Interface: `IRepository`
 
-Defines the contract:
+Definon operacionet bazë:
 
 - `getAll()`
 - `getById(id)`
@@ -129,115 +128,118 @@ Defines the contract:
 - `delete(id)`
 - `save()`
 
-#### Implementation: `FileRepository`
+#### FileRepository
 
-- Handles data persistence using CSV files
-- Implements all methods from `IRepository`
-
----
-
-## 5. Current Implementation (Phase 1)
-
-- Data is stored in CSV files
-- Managed exclusively through `FileRepository`
-- No direct file access from services or controllers
-
-This ensures:
-- Simplicity
-- Maintainability
-- Clear separation of concerns
+- Ruajtja e të dhënave bëhet në CSV files
+- Implementon `IRepository`
+- Nuk përdoret direkt nga controllers
 
 ---
 
-## 6. Planned Database Integration (Phase 2)
+## 5.Implementimi Aktual (Faza 1)
 
-The system is explicitly designed for seamless database integration.
+- Sistemi përdor file-based storage (CSV)
+- `FileRepository` menaxhon të gjitha operacionet e ruajtjes
+- Nuk ka akses direkt në file nga shtresat tjera
 
-### Future Architecture:
+Kjo siguron:
+- Thjeshtësi
+- Qartësi në strukturë
+- Stabilitet për zhvillim akademik
+
+---
+
+## 6. Integrimi i planifikuar i Bazës së të Dhënave (Faza 2)
+
+Sistemi është projektuar për të kaluar në database pa ndryshuar pjesët tjera.
+
+### Arkitektura e ardhshme:
 
 
 Service Layer
+
 ↓
+
 IRepository (Interface)
+
 ↓
-DatabaseRepository (Future Implementation)
+
+DatabaseRepository
+
 ↓
+
 Database (SQL)
 
 
-### Transition Strategy:
+### Strategjia e tanzicionit:
 
-- Implement `DatabaseRepository` following `IRepository`
-- Replace `FileRepository` with `DatabaseRepository`
-- No changes required in:
+- Implemento `DatabaseRepository`
+- Zëvendëso `FileRepository`
+- Nuk ndryshohen:
   - Services
   - Controllers
   - Routes
   - Middleware
 
-This demonstrates strong adherence to **Dependency Inversion Principle (DIP)**.
+Kjo është e mundur falë **Dependency Inversion Principle (DIP)**.
 
 ---
 
-## 7. Design Principles Applied
+## 7. Parimet e Dizajnit
 
-### 7.1 Separation of Concerns
-Each layer has a distinct responsibility.
+### 7.1 Ndarja e Përgjegjësive (Separation of Concerns)
+Çdo shtresë ka funksion të qartë dhe të izoluar.
 
 ### 7.2 Dependency Inversion Principle
-Services depend on abstractions (`IRepository`), not concrete implementations.
+Shtresat e sipërme varen nga abstraksione (`IRepository`), jo nga implementime konkrete.
 
 ### 7.3 Open/Closed Principle
-The system can be extended (database integration) without modifying existing code.
+Sistemi mund të zgjerohet pa modifikuar kodin ekzistues.
 
 ### 7.4 Single Responsibility Principle
-Each module handles a single responsibility.
+Çdo klasë ka vetëm një përgjegjësi.
 
 ---
 
-## 8. Security Considerations
+## 8. Siguria
 
-- Authentication handled via middleware (`authMiddleware.js`)
-- Passwords should be stored using hashing (e.g., bcrypt)
-- Input validation occurs before reaching business logic
-- Error handling is centralized via middleware
-
----
-
-## 9. Data Flow Example
-
-### User Creation Flow
-
-1. Client sends request
-2. Route matches endpoint
-3. Middleware validates request
-4. Controller receives request
-5. Controller calls `UserService`
-6. Service validates and processes data
-7. Service calls `IRepository.add()`
-8. `FileRepository` writes to CSV
-9. Response is returned
+- Middleware përdoret për autentikim (JWT)
+- Fjalëkalimet ruhen të hashuara (p.sh. bcrypt)
+- Validimi i input-it bëhet në service layer
+- Menaxhimi i gabimeve bëhet në mënyrë qendrore
 
 ---
 
-## 10. Extensibility and Maintainability
+## 9.Shembull i Rrjedhës së të Dhënave
 
-This architecture allows:
+### Krijimi i një përdoruesi:
 
-- Easy replacement of persistence layer
-- Independent module development
-- Scalability to larger systems
-- Minimal impact when introducing new features
+1. Klienti dërgon kërkesë
+2. Routes e dërgon te controller
+3. Middleware verifikon kërkesën
+4. Controller thërret `UserService`
+5. Service validon të dhënat
+6. Service thërret `IRepository.add()`
+7. `FileRepository` ruan të dhënat në CSV
+8. Kthehet përgjigja
 
 ---
 
-## 11. Conclusion
+## 10. Zgjerueshmëria
 
-The system is designed as a **database-ready, layered architecture**.
+Arkitektura lejon:
 
-While currently implemented using file-based storage, the use of abstraction (`IRepository`) ensures that:
+- Integrim të lehtë me database
+- Shtim të funksionaliteteve të reja
+- Zhvillim modular
+- Mirëmbajtje të thjeshtë
 
-- The system can transition to a database with minimal effort
-- Business logic remains unchanged
-- The architecture remains clean and maintainable
+---
+
+## 11. Përfundim
+
+Sistemi është i implementuar me ruajtje në file, por është i dizajnuar si një **arkitekturë e gatshme për database**.
+
+Falë përdorimit të abstraksionit (`IRepository`), migrimi drejt një baze të dhënash mund të bëhet pa ndryshuar logjikën e biznesit.
+
 
