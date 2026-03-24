@@ -115,6 +115,8 @@ Qellimi:
 
 -getUserById(id)
 
+-getUserByEmail(email)
+
 -createUser(data)
 
 -updateUser(id, data)
@@ -124,18 +126,24 @@ Qellimi:
 ---
 
 ### ServiceService
+- repository: IRepository
 
--repository: IRepository
++ getAllServices()
+  
++ getServiceById(id)
+  
++ getServicesByProvider(providerId)
+  
++ getServicesByCategory(category)
+  
++ getServicesByLocation(location)
++ 
++ createService(data)
+  
++ updateService(id, data)
+  
++ deleteService(id)
 
--getAllServices()
-
--getServiceById(id)
-
--createService(data)
-
--updateService(id, data)
-
--deleteService(id)
 
 ---
 
@@ -143,13 +151,20 @@ Qellimi:
 
 -repository: IRepository
 
--getAllBookings()
++ getAllBookings()
+  
++ getBookingById(id)
+  
++ getBookingsByUser(userId)
+  
++ getBookingsByProvider(providerId)
+  
++ createBooking(data)
+  
++ updateStatus(id, status)
+  
++ deleteBooking(id)
 
--createBooking(data)
-
--updateStatus(id, status)
-
--deleteBooking(id)
 
 ---
 
@@ -157,13 +172,17 @@ Qellimi:
 
 -repository: IRepository
 
--getAllReviews()
-
--createReview(data)
-
--deleteReview(id)
-
--getAverageRating(providerId)
++ getAllReviews()
+  
++ getReviewById(id)
+  
++ getReviewsByProvider(providerId)
+  
++ getAverageRating(providerId)
+  
++ createReview(data)
+  
++ deleteReview(id)
 
 ---
 
