@@ -43,6 +43,8 @@ FileRepository (Implementimi aktual)
 CSV Files
 
 
+Folderi "repositories/" përfaqëson shtresën Data (Data Layer)
+
 ---
 
 ## 3.Rrjedha e Kërkesave (Request Flow)
