@@ -4,3 +4,4 @@ id,providerId,title,description,category,location,price,status,createdAt
 3,3,House Cleaning,Full cleaning,Cleaning,Prizren,25,active,2024-01-03
 4,1,Electrical Repair,Fix wiring,Electrical,Gjakova,30,active,2024-01-04
 5,2,English Lessons,Language tutoring,Education,Pristina,18,active,2024-01-05
+6,1,Graphic designer,,General,Kosovo,40,active,2026-03-28T22:18:41.634Z
