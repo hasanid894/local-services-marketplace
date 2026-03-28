@@ -49,10 +49,18 @@ class FileRepository extends IRepository {
     return entity;
   }
 
-  save() {
-    const lines = [this.csvHeader(), ...this._data.map(e => e.toCSV())];
-    fs.writeFileSync(this.filePath, lines.join('\n') + '\n', 'utf-8');
-  }
+ save() {
+  const lines = [
+    this.csvHeader(),
+    ...this._data.map(e =>
+      typeof e.toCSV === 'function'
+        ? e.toCSV()
+        : Object.values(e).join(',')
+    )
+  ];
+
+  fs.writeFileSync(this.filePath, lines.join('\n') + '\n', 'utf-8');
+}
 
   delete(id) {
     const index = this._data.findIndex(e => e.id === Number(id));
