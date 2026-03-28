@@ -1,6 +1,0 @@
-id,providerId,title,description,category,location,price,status,createdAt
-1,1,Plumbing Fix,Fix leaks,Plumbing,Pristina,20,active,2024-01-01
-2,2,Math Tutoring,Private lessons,Education,Peja,15,active,2024-01-02
-3,3,House Cleaning,Full cleaning,Cleaning,Prizren,25,active,2024-01-03
-4,1,Electrical Repair,Fix wiring,Electrical,Gjakova,30,active,2024-01-04
-5,2,English Lessons,Language tutoring,Education,Pristina,18,active,2024-01-05
