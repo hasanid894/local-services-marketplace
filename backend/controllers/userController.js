@@ -1,4 +1,4 @@
-const FileRepository = require('../data/FileRepository');
+const FileRepository = require('../repositories/FileRepository');
 const UserService = require('../services/UserService');
 const User = require('../models/User');
 const path = require('path');
