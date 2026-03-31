@@ -165,9 +165,42 @@ npm run backend
 npm run frontend
 ```
 
-## What to show in screenshots
+## Screenshots to verify 
 
-- console menu with list/add/find/update/delete
-- frontend list + filter + add/update/delete form
-- role switch behavior (customer vs provider/admin)
-- one API CRUD example from Postman/Thunder Client
+## Console menu with list/add/find/update/delete:
+<img width="1041" height="233" alt="image" src="https://github.com/user-attachments/assets/157cce9e-d78e-42aa-899b-011acc3f06d2" />
+For example, when the first option is clicked, here's what is shown in console:
+<img width="1056" height="753" alt="image" src="https://github.com/user-attachments/assets/9cb9c280-c854-4393-9c70-69cbd0632a77" />
+<img width="1176" height="630" alt="image" src="https://github.com/user-attachments/assets/0977f968-8573-4a00-a819-1ce84a7c9527" />
+<img width="1127" height="670" alt="image" src="https://github.com/user-attachments/assets/2313f7bf-a161-41de-8a52-e34c574d0e68" />
+
+Option 2:
+
+<img width="718" height="414" alt="image" src="https://github.com/user-attachments/assets/f531b3c6-20d7-4720-b8e4-4edc325d1a5d" />
+
+Option 3:
+
+<img width="679" height="378" alt="image" src="https://github.com/user-attachments/assets/bd7e9e17-3f13-4020-9f93-1e2a9b259fdc" />
+
+Option 4:
+
+<img width="735" height="412" alt="image" src="https://github.com/user-attachments/assets/60327665-6f07-4b84-9442-6f6eef2b1024" />
+
+Option 5:
+
+<img width="761" height="127" alt="image" src="https://github.com/user-attachments/assets/643eeb6c-affd-4d12-8bfb-671ba2090ff7" />
+
+
+
+## Frontend list + filter + add/update/delete form
+<img width="991" height="837" alt="image" src="https://github.com/user-attachments/assets/dfb92b72-3d1f-4277-8125-968c5f85cd5d" />
+<img width="1034" height="853" alt="image" src="https://github.com/user-attachments/assets/3f0d5b5c-d5a9-4ba5-bd09-bf37a7350a2d" />
+<img width="992" height="799" alt="image" src="https://github.com/user-attachments/assets/7024f5bb-487a-4b31-8a95-210ce782fe98" />
+
+
+## Role switch behavior (customer vs provider/admin)
+<img width="1044" height="505" alt="image" src="https://github.com/user-attachments/assets/0c06969d-9e66-4794-9052-26d7df510779" />
+<img width="1062" height="836" alt="image" src="https://github.com/user-attachments/assets/f77de987-67c0-4726-87e5-379e4e62aaf4" />
+<img width="1024" height="867" alt="image" src="https://github.com/user-attachments/assets/f8e1a756-7f96-46a5-a6b1-4e8c03a33e95" />
+
+Admin can also update/delete all of the existing services, as shown on earlier screenshots.
