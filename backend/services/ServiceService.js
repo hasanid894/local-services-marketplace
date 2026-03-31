@@ -3,44 +3,48 @@ class ServiceService {
     this.repository = repository;
   }
 
-    getAllServices(filter = {}) {
+  list(filter = {}) {
     let services = this.repository.getAll();
 
-    if (filter.category) {
-      services = services.filter(s => s.category === filter.category);
+    if (filter.category && String(filter.category).trim()) {
+      const categoryQuery = String(filter.category).trim().toLowerCase();
+      services = services.filter(s =>
+        String(s.category || '').toLowerCase().includes(categoryQuery)
+      );
     }
 
-    if (filter.location) {
+    if (filter.location && String(filter.location).trim()) {
       services = services.filter(s =>
-        s.location.toLowerCase().includes(filter.location.toLowerCase())
+        String(s.location || '').toLowerCase().includes(String(filter.location).trim().toLowerCase())
       );
+    }
+
+    if (filter.providerId !== undefined && filter.providerId !== null && filter.providerId !== '') {
+      services = services.filter(s => s.providerId === Number(filter.providerId));
     }
 
     return services;
   }
 
-  getServiceById(id) {
+  findById(id) {
     return this.repository.getById(id);
   }
 
-  
-
-  createService({ providerId, title, description, category, location, price }) {
-
-    // Validime 
-    if (!title || title.trim() === '') {
-      throw new Error('Title cannot be empty.');
+  add({ providerId, title, name, description, category, location, price }) {
+    const normalizedTitle = (title ?? name ?? '').trim();
+    if (!normalizedTitle) {
+      throw new Error('Name cannot be empty.');
     }
 
-    if (!price || price <= 0) {
+    if (price === undefined || price === null || Number(price) <= 0) {
       throw new Error('Price must be greater than 0.');
     }
 
     const service = {
       id: null,
-      providerId,
-      title: title.trim(),
-      description:description||'',
+      providerId: Number(providerId) || 0,
+      title: normalizedTitle,
+      description: description || '',
       category: category || '',
       location: location || '',
       price: Number(price),
@@ -49,6 +53,18 @@ class ServiceService {
     };
 
     return this.repository.add(service);
+  }
+
+  getAllServices(filter = {}) {
+    return this.list(filter);
+  }
+
+  getServiceById(id) {
+    return this.findById(id);
+  }
+
+  createService(payload) {
+    return this.add(payload);
   }
 
   updateService(id, data) {
@@ -86,7 +102,7 @@ class ServiceService {
   }
 
   getServicesByProvider(providerId) {
-    return this.getAllServices({ providerId });
+    return this.getAllServices({ providerId: Number(providerId) });
   }
 }
 

@@ -25,7 +25,10 @@ class FileRepository extends IRepository {
 
   _load() {
     const content = fs.readFileSync(this.filePath, 'utf-8');
-    const lines = content.split('\n').filter(Boolean);
+    const lines = content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean);
     this._data = lines.slice(1).map(line => this.fromCSV(line));
   }
 

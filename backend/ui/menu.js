@@ -25,8 +25,14 @@ function menu() {
 function handle(opt) {
   switch (opt) {
     case '1':
-      console.log(service.getAllServices());
-      return menu();
+      rl.question('Filter category (optional): ', category => {
+        rl.question('Filter location (optional): ', location => {
+          const result = service.list({ category, location });
+          console.log(result);
+          menu();
+        });
+      });
+      return;
 
     case '2':
       rl.question('Title: ', title => {
@@ -50,7 +56,7 @@ function handle(opt) {
 
     case '3':
       rl.question('ID: ', id => {
-        console.log(service.getServiceById(id));
+        console.log(service.findById(id));
         menu();
       });
       break;
@@ -58,7 +64,11 @@ function handle(opt) {
     case '4':
       rl.question('ID: ', id => {
         rl.question('New title: ', title => {
-          console.log(service.updateService(id, { title }));
+          try {
+            console.log(service.updateService(id, { title }));
+          } catch (e) {
+            console.log(e.message);
+          }
           menu();
         });
       });
@@ -66,7 +76,11 @@ function handle(opt) {
 
     case '5':
       rl.question('ID: ', id => {
-        console.log(service.deleteService(id));
+        try {
+          console.log(service.deleteService(id));
+        } catch (e) {
+          console.log(e.message);
+        }
         menu();
       });
       break;
