@@ -9,7 +9,8 @@ function App() {
     price: ''
   });
 
-  // GET services
+  const [editingId, setEditingId] = useState(null);
+
   const fetchServices = async () => {
     const res = await fetch('http://localhost:5000/api/services');
     const data = await res.json();
@@ -20,18 +21,47 @@ function App() {
     fetchServices();
   }, []);
 
-  // POST service
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    await fetch('http://localhost:5000/api/services', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
-    });
+    if (editingId) {
+      // UPDATE
+      await fetch(`http://localhost:5000/api/services/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+    } else {
+      // CREATE
+      await fetch('http://localhost:5000/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+    }
 
     setForm({ title: '', category: '', location: '', price: '' });
+    setEditingId(null);
     fetchServices();
+  };
+
+  const handleDelete = async (id) => {
+    await fetch(`http://localhost:5000/api/services/${id}`, {
+      method: 'DELETE'
+    });
+
+    fetchServices();
+  };
+
+  const handleEdit = (service) => {
+    setForm({
+      title: service.title,
+      category: service.category,
+      location: service.location,
+      price: service.price
+    });
+
+    setEditingId(service.id);
   };
 
   return (
@@ -43,11 +73,14 @@ function App() {
         {services.map(s => (
           <li key={s.id}>
             {s.title} - {s.category} - {s.location} - {s.price}€
+
+            <button onClick={() => handleEdit(s)}>Edit</button>
+            <button onClick={() => handleDelete(s.id)}>Delete</button>
           </li>
         ))}
       </ul>
 
-      <h2>Add Service</h2>
+      <h2>{editingId ? 'Edit Service' : 'Add Service'}</h2>
 
       {/* FORM */}
       <form onSubmit={handleSubmit}>
@@ -80,7 +113,9 @@ function App() {
         />
         <br />
 
-        <button type="submit">Add</button>
+        <button type="submit">
+          {editingId ? 'Update' : 'Add'}
+        </button>
       </form>
     </div>
   );
