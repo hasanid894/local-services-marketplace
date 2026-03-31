@@ -1,0 +1,142 @@
+.app {
+  min-height: 100vh;
+  background: #f4f7fb;
+  font-family: Arial, sans-serif;
+  color: #1f2937;
+}
+
+.container {
+  width: min(1000px, 92%);
+  margin: 0 auto;
+  padding: 24px 0 40px;
+}
+
+.header h1 {
+  margin: 0;
+}
+
+.ok {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.bad {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+button.ghost {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+button.primary {
+  justify-self: start;
+}
+
+button.danger {
+  background: #dc2626;
+}
+
+.found {
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.empty {
+  margin: 0;
+  color: #6b7280;
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.card h3 {
+  margin: 0 0 6px;
+}
+
+.card p {
+  margin: 0 0 6px;
+  color: #4b5563;
+}
+
+.card small {
+  color: #6b7280;
+}
+
+.card-actions {
+  display: grid;
+  gap: 8px;
+  text-align: right;
+}
