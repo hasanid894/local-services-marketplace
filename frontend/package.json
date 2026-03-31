@@ -8,7 +8,6 @@
     "react-scripts": "^5.0.1"
   },
   "scripts": {
-<<<<<<< HEAD
     "start": "react-scripts start"
   },
   "browserslist": {
@@ -22,11 +21,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-=======
+
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
->>>>>>> b5ec601fc9c664074e6d7f383162f7774096c71b
+
   }
 }
