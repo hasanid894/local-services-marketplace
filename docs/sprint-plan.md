@@ -1,4 +1,4 @@
-# Sprint 2 Plan — Hasan
+# Sprint 2 Plan 
 Date: April 1, 2026
 
 ## Current State
@@ -69,6 +69,4 @@ Date: April 1, 2026
   - update/delete with non-existent id (should return not found / false)
   - repository selection misconfiguration (e.g., `USE_DB=true` but connection missing) should fail with a clear startup error instead of crashing mid-request
 
-## Deadline
 
-- Deadline: Tuesday, April 8, 2026, 08:30
