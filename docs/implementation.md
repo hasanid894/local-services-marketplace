@@ -1,23 +1,23 @@
-# Implementation Notes
+# Implementimi
 
-This file describes what I implemented in the project, how it works in practice, and why some choices were made.
+Ky file përshkruan atë që kam zbatuar në projekt, si funksionon në praktikë dhe pse u bënë disa zgjedhje
 
-## What I built
+## Çfarë ndërtova?
 
-I used `Service` as the main model and connected everything through the same flow:
+Kam përdorur `Service` si model kryesor dhe lidha gjithçka përmes të njëjtës rrjedhë:
 
 `UI -> Service layer -> Repository -> CSV file`
 
-I kept both interfaces active:
+Mbajta të dyja ndërfaqet(interfaces) aktive:
 
-- console menu in `backend/ui/menu.js`
-- web interface in `frontend/src/App.js`
+- menyja e konsolës në `backend/ui/menu.js`
+- ndërfaqja web në `frontend/src/App.js`
 
-Both use the same backend/service logic, so the behavior is consistent.
+Të dyja përdorin të njëjtën logjikë backend/service, kështu që sjellja është konsistente.
 
-## Service model and data storage
+## Service model dhe ruajtja e të dhënave
 
-The model is in `backend/models/Service.js` and has these fields:
+Modeli është në `backend/models/Service.js` dhe ka këto fusha:
 
 - `id`
 - `providerId`
@@ -29,9 +29,9 @@ The model is in `backend/models/Service.js` and has these fields:
 - `status`
 - `createdAt`
 
-Data is stored in CSV (`backend/data/csv/services.csv`) through a generic file repository (`backend/repositories/FileRepository.js`).
+Të dhënat ruhen në CSV (`backend/data/csv/services.csv`) përmes njëgeneric File Repository(`backend/repositories/FileRepository.js`).
 
-Repository methods used:
+Metodat e përdorura të depozitimit(repository):
 
 - `getAll()`
 - `getById(id)`
@@ -40,39 +40,39 @@ Repository methods used:
 - `update(id, updatedData)`
 - `delete(id)`
 
-Why I kept it this way:
+Pse e implementova kështu:
 
-- easy to test without a database
-- clear separation between business logic and persistence
-- reusable repository for other models too
+- e lehtë për t’u testuar pa një bazë të dhënash
+- ndarje e qartë midis logjikës së biznesit dhe qëndrueshmërisë
+- Repository e ripërdorshme edhe për modele të tjera
 
-## Service layer logic
+## Logjika e Service layer
 
-Main logic is in `backend/services/ServiceService.js`.
+Logjika kryesore është në `backend/services/ServiceService.js`.
 
-Core methods:
+Metodat kryesore:
 
 - `list(filter)`
 - `add(data)`
 - `findById(id)`
 
-Additional methods:
+Metoda shtesë:
 
 - `updateService(id, data)`
 - `deleteService(id)`
 
-Validation currently enforced:
+Validimi aktualisht i zbatuar:
 
-- title/name cannot be empty
-- price must be greater than 0
+- titulli/emri nuk mund të jetë bosh
+- çmimi duhet të jetë më i madh se 0
 
-Filtering supports category/location/provider. Category and location matching are case-insensitive and tolerant (partial text).
+Filtrimi mbështet kategorinë/vendndodhjen/ofruesin. Përputhja e kategorisë dhe vendndodhjes nuk është e ndjeshme ndaj shkronjave të mëdha dhe tolerohet (tekst i pjesshëm).
 
-The service receives repository via constructor (dependency injection), so I can swap storage later without rewriting service logic.
+Shërbimi merr repository nëpërmjet konstruktorit (dependency injection), kështu që unë mund të ndërroj storage-n më vonë pa rishkruar logjikën e shërbimit.
 
-## API and controller flow
+## API dhe controller flow
 
-Service endpoints are in `backend/routes/serviceRoutes.js` and `backend/controllers/serviceController.js`:
+Service endpoints janë në `backend/routes/serviceRoutes.js` dhe `backend/controllers/serviceController.js`:
 
 - `GET /api/services`
 - `GET /api/services/:id`
@@ -80,11 +80,11 @@ Service endpoints are in `backend/routes/serviceRoutes.js` and `backend/controll
 - `PUT /api/services/:id`
 - `DELETE /api/services/:id`
 
-Controllers call the service, and the service calls repository. No direct file access from UI.
+Controllers e thërrasin service, dhe service e thërret repository.Nuk ka qasje të drejtpërdrejtë në skedarë nga ndërfaqja e përdoruesit.
 
 ## Console UI
 
-The console menu in `backend/ui/menu.js` supports:
+Menuja e konsolës në `backend/ui/menu.js` mbështet:
 
 1. list (with optional filter input)
 2. add
@@ -93,47 +93,45 @@ The console menu in `backend/ui/menu.js` supports:
 5. delete
 0. exit
 
-This is useful for quick testing and verifying full CRUD without browser tools.
+Kjo është e dobishme për testim të shpejtë dhe verifikim të plotë të CRUD pa browsing tools.
 
 ## Frontend UI
 
-The web interface (`frontend/src/App.js` + `frontend/src/App.css`) supports:
+Ndërfaqja web (`frontend/src/App.js` + `frontend/src/App.css`) mbështet:
 
-- list services
-- filter by category/location
-- find by id
-- add/update/delete
-- visible backend connection status
-
-I also improved the layout so it is easier to use during demos.
+- listimin e shërbimeve
+- filtrimin sipas kategorisë/vendndodhjes
+- gjetjen sipas ID-së
+- shtimin/përditësimin/fshirjen
+- statusin e dukshëm të lidhjes së backend-it
 
 ## Role behavior (demo-safe RBAC)
 
-Initially, everyone could mutate services because CRUD was the first target.  
-After that, I added role restrictions to make behavior closer to a real marketplace.
+Fillimisht, të gjithë perdoruesit mund të ndryshonin shërbimet sepse CRUD ishte objektivi i parë.
+Pas kësaj, shtova kufizime rolesh për ta bërë sjelljen më të afërt me një treg të vërtetë.
 
 Middleware: `backend/middleware/authMiddleware.js`
 
-Current demo headers:
+Titujt e demove aktuale:
 
 - `x-user-role`: `customer`, `provider`, `admin`
 - `x-user-id`: numeric id
 
-Rules now:
+Rregullat tani:
 
-- `customer`: read-only for services
-- `provider`: can create/update/delete only own services
-- `admin`: full access
+- `klient`: vetëm për lexim të shërbimeve
+- `ofrues`: mund të krijojë/përditësojë/fshijë vetëm shërbimet e veta
+- `administrator`: akses i plotë
 
-Frontend includes a role/user switcher so this can be tested quickly.
+Frontend përfshin një role/user switcher kështu që kjo veqori mund të testohet shpejt.
 
-Why this approach:
+Pse kjo qasje:
 
-- keeps implementation simple and transparent
-- enforces permissions in backend (not only UI hiding)
-- easy to replace later with JWT authentication
+- e mban implementimin të thjeshtë dhe transparent
+- zbaton lejet në backend (jo vetëm fshehjen e UI)
+- e lehtë për t'u zëvendësuar më vonë me autentifikim JWT
 
-## How to run
+## Si të ekzekutohet:
 
 Backend API:
 
@@ -165,9 +163,43 @@ npm run backend
 npm run frontend
 ```
 
-## What to show in screenshots
+## Screenshots per verifikim 
 
-- console menu with list/add/find/update/delete
-- frontend list + filter + add/update/delete form
-- role switch behavior (customer vs provider/admin)
-- one API CRUD example from Postman/Thunder Client
+## Console menu me opsionet list/add/find/update/delete:
+<img width="1041" height="233" alt="image" src="https://github.com/user-attachments/assets/157cce9e-d78e-42aa-899b-011acc3f06d2" />
+Kur zgjedhet opsioni 1:
+
+<img width="1056" height="753" alt="image" src="https://github.com/user-attachments/assets/9cb9c280-c854-4393-9c70-69cbd0632a77" />
+<img width="1176" height="630" alt="image" src="https://github.com/user-attachments/assets/0977f968-8573-4a00-a819-1ce84a7c9527" />
+<img width="1127" height="670" alt="image" src="https://github.com/user-attachments/assets/2313f7bf-a161-41de-8a52-e34c574d0e68" />
+
+Opsioni 2:
+
+<img width="718" height="414" alt="image" src="https://github.com/user-attachments/assets/f531b3c6-20d7-4720-b8e4-4edc325d1a5d" />
+
+Opsioni 3:
+
+<img width="679" height="378" alt="image" src="https://github.com/user-attachments/assets/bd7e9e17-3f13-4020-9f93-1e2a9b259fdc" />
+
+Opsioni 4:
+
+<img width="735" height="412" alt="image" src="https://github.com/user-attachments/assets/60327665-6f07-4b84-9442-6f6eef2b1024" />
+
+Opsioni 5:
+
+<img width="761" height="127" alt="image" src="https://github.com/user-attachments/assets/643eeb6c-affd-4d12-8bfb-671ba2090ff7" />
+
+
+
+## Frontend list + filter + add/update/delete 
+<img width="991" height="837" alt="image" src="https://github.com/user-attachments/assets/dfb92b72-3d1f-4277-8125-968c5f85cd5d" />
+<img width="1034" height="853" alt="image" src="https://github.com/user-attachments/assets/3f0d5b5c-d5a9-4ba5-bd09-bf37a7350a2d" />
+<img width="992" height="799" alt="image" src="https://github.com/user-attachments/assets/7024f5bb-487a-4b31-8a95-210ce782fe98" />
+
+
+## Role switch behavior (customer vs provider/admin)
+<img width="1044" height="505" alt="image" src="https://github.com/user-attachments/assets/0c06969d-9e66-4794-9052-26d7df510779" />
+<img width="1062" height="836" alt="image" src="https://github.com/user-attachments/assets/f77de987-67c0-4726-87e5-379e4e62aaf4" />
+<img width="1024" height="867" alt="image" src="https://github.com/user-attachments/assets/f8e1a756-7f96-46a5-a6b1-4e8c03a33e95" />
+
+Admini gjithashtu mund të përditësojë/fshijë të gjitha shërbimet ekzistuese, siç tregohet në screenshots  të mëparshme.
