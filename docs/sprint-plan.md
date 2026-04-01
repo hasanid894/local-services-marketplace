@@ -11,17 +11,19 @@ Date: April 1, 2026
   - Console menu UI for services: list (with filters), add, find, update, delete (`backend/ui/menu.js`)
   - Web API endpoints for services: `GET/POST/PUT/DELETE` plus `GET /api/services/:id`
   - Frontend UI for services: list, filter, find-by-id, add/update/delete, backend connection status (`frontend/src/App.js`)
-  - Demo RBAC for services:
-    - customer = read-only
-    - provider/admin = can create
-    - provider = can update/delete only own services
+  - Role-based behavior for services (demo version):
+    - customer = read-only for services
+    - provider/admin = can create/update/delete
+    - provider = restricted to own services
   - Booking and review routes/controllers no longer crash the server (routes exist and export routers)
 
 - What is not working? (list problems/bugs)
-  - Demo authentication is header-based (not real login/JWT yet), so roles are not persistent and not secure for production
+  - Authentication is still a demo approach (header-based). No real login/JWT flow yet, so roles are not persistent or secure
   - CSV parsing is simple (comma-splitting). If a field contains commas, it can break parsing
   - No automated tests yet (only manual testing through UI/API)
   - Backend must be running separately for frontend to load data (expected, but easy to forget during demos)
+  - Bookings/Reviews exist as models/services/routes but are not yet connected to the frontend with a complete user flow
+  - No verified provider profiles yet (just `providerId` ownership logic)
 
 - Does the program compile and run? (Yes/No)
   - Yes. Backend starts on port 5000, frontend compiles and runs on port 3000.
@@ -30,13 +32,14 @@ Date: April 1, 2026
 
 ### New Feature (what you will build)
 
-- **Booking creation from the UI**
-  - **What it does**: A customer can select a service and create a booking request (scheduled date + optional notes). The booking is saved to CSV and becomes visible in a simple bookings list.
-  - **How the user interacts**:
-    - On the frontend services page, the user clicks “Book” on a service card
-    - A small form appears (date + notes) and submits the booking
-    - The UI shows a confirmation and refreshes the bookings list
-  - **Why this feature**: It extends the marketplace from “just listing services” into an actual workflow (service -> booking), using the same architecture and persistence approach.
+- **Database-ready persistence layer (DatabaseRepository skeleton + migration path)**
+  - **What it does**: Add a new repository implementation (planned PostgreSQL) while keeping the existing service/controller logic unchanged.
+  - **How the user interacts**: No UI change required at first; the goal is to be able to switch persistence using configuration (CSV now, DB later).
+  - **Concrete deliverables**
+    - Create `DatabaseRepository` (skeleton) that implements `IRepository`
+    - Add a configuration switch (example: `USE_DB=true/false`) to decide which repository to instantiate
+    - Keep `ServiceService` and controllers unchanged (DIP/OCP) and only swap the repository instance
+  - **Why this feature**: The README describes PostgreSQL as the planned database. This step prepares that migration without breaking the current working CRUD flow.
 
 ### Error Handling (what you will add)
 
@@ -58,13 +61,13 @@ Date: April 1, 2026
 - Which methods will you test?
   - `FileRepository.getAll`, `getById`, `add`, `update`, `delete` (using a temporary test CSV file)
   - `ServiceService.add` validation rules
-  - Booking creation flow: service -> booking creation -> stored in CSV -> retrieved via repository
+  - Repository swapping: run the same service methods against `FileRepository` and `DatabaseRepository` (stub) to confirm contract compatibility
 
 - Which edge cases will you check?
   - adding a service with empty title or price <= 0 (should reject)
   - filtering with different casing (e.g., “education” vs “Education”)
   - update/delete with non-existent id (should return not found / false)
-  - booking with missing date (should reject with validation)
+  - repository selection misconfiguration (e.g., `USE_DB=true` but connection missing) should fail with a clear startup error instead of crashing mid-request
 
 ## Deadline
 
