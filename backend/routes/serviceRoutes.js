@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/serviceController');
-const { attachDemoUser, requireRole } = require('../middleware/authMiddleware');
+const { attachDemoUser, verifyToken, requireRole } = require('../middleware/authMiddleware');
 
-router.use(attachDemoUser);
+// Public reads — attach user if token present, but don't require it
+router.get('/', attachDemoUser, controller.getServices);
+router.get('/:id', attachDemoUser, controller.getServiceById);
 
-router.get('/', controller.getServices);
-router.get('/:id', controller.getServiceById);
-router.post('/', requireRole('provider', 'admin'), controller.createService);
-router.put('/:id', requireRole('provider', 'admin'), controller.updateService);
-router.delete('/:id', requireRole('provider', 'admin'), controller.deleteService);
+// Write operations — require a valid JWT + provider or admin role
+router.post('/', verifyToken, requireRole('provider', 'admin'), controller.createService);
+router.put('/:id', verifyToken, requireRole('provider', 'admin'), controller.updateService);
+router.delete('/:id', verifyToken, requireRole('provider', 'admin'), controller.deleteService);
 
 module.exports = router;
