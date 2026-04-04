@@ -27,7 +27,12 @@ class ServiceService {
   }
 
   findById(id) {
-    return this.repository.getById(id);
+    // Case 3: invalid / non-numeric IDs — return null instead of crashing
+    const numericId = Number(id);
+    if (isNaN(numericId) || !Number.isInteger(numericId) || numericId <= 0) {
+      return null;
+    }
+    return this.repository.getById(numericId);
   }
 
   add({ providerId, title, name, description, category, location, price }) {
@@ -36,7 +41,12 @@ class ServiceService {
       throw new Error('Name cannot be empty.');
     }
 
-    if (price === undefined || price === null || Number(price) <= 0) {
+    // Case 2: invalid price input — clear message instead of NaN logic errors
+    const parsedPrice = Number(price);
+    if (price === undefined || price === null || price === '' || isNaN(parsedPrice)) {
+      throw new Error('Please enter a valid number for price.');
+    }
+    if (parsedPrice <= 0) {
       throw new Error('Price must be greater than 0.');
     }
 
@@ -47,7 +57,7 @@ class ServiceService {
       description: description || '',
       category: category || '',
       location: location || '',
-      price: Number(price),
+      price: parsedPrice,
       status: 'active',
       createdAt: new Date().toISOString()
     };
@@ -68,16 +78,23 @@ class ServiceService {
   }
 
   updateService(id, data) {
-    const existing = this.repository.getById(id);
+    const existing = this.repository.getById(Number(id));
     if (!existing) {
-      throw new Error('Service not found.');
+      throw new Error(`Item not found: no service with id ${id}.`);
     }
 
-    // Optional validation during update
-    if (data.price !== undefined && data.price <= 0) {
-      throw new Error('Price must be greater than 0.');
+    // Validate price if provided
+    if (data.price !== undefined) {
+      const parsedPrice = Number(data.price);
+      if (isNaN(parsedPrice)) {
+        throw new Error('Please enter a valid number for price.');
+      }
+      if (parsedPrice <= 0) {
+        throw new Error('Price must be greater than 0.');
+      }
     }
 
+    // Validate title if provided
     if (data.title !== undefined && data.title.trim() === '') {
       throw new Error('Title cannot be empty.');
     }
@@ -87,12 +104,12 @@ class ServiceService {
 
   deleteService(id) {
     const deleted = this.repository.delete(id);
-    if (!deleted) throw new Error('Service not found.');
+    if (!deleted) throw new Error(`Item not found: no service with id ${id}.`);
     return { message: 'Service deleted successfully.' };
   }
 
-  //(Opsionale – për përdorim real në aplikacion)
-   
+  // ── Convenience helpers ────────────────────────────────────────────────
+
   getServicesByCategory(category) {
     return this.getAllServices({ category });
   }
