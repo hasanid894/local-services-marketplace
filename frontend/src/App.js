@@ -1,7 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import './App.css';
 
 const API_BASE = 'http://localhost:5000/api/services';
+
+// ── Safe fetch helper ────────────────────────────────────────────────────────
+// Case 2: frontend fetch fails (backend offline, network error, non-JSON response)
+// → shows a clear UI message and keeps the UI fully usable. Never throws to the UI.
+async function safeFetch(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+
+    let body = null;
+    try {
+      body = await res.json();
+    } catch {
+      // non-JSON response body — treat as empty
+      body = {};
+    }
+
+    return { ok: res.ok, status: res.status, data: body };
+  } catch (networkErr) {
+    // Network failure (backend offline, CORS, DNS, etc.)
+    return {
+      ok: false,
+      status: 0,
+      data: { error: 'Request failed — backend may be offline.' }
+    };
+  }
+}
 
 function App() {
   const [role, setRole] = useState('customer');
@@ -17,11 +43,14 @@ function App() {
   const [filters, setFilters] = useState({ category: '', location: '' });
   const [findId, setFindId] = useState('');
   const [foundService, setFoundService] = useState(null);
-  const [error, setError] = useState('');
+  const [findError, setFindError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [globalError, setGlobalError] = useState('');
   const [apiStatus, setApiStatus] = useState('Checking backend...');
   const [editingId, setEditingId] = useState(null);
 
   const authHeaders = () => ({
+    'Content-Type': 'application/json',
     'x-user-role': role,
     'x-user-id': userId
   });
@@ -32,18 +61,26 @@ function App() {
     return false;
   };
 
-  const fetchServices = async () => {
-    try {
-      const res = await fetch(API_BASE);
-      if (!res.ok) throw new Error('Backend returned an error.');
-      const data = await res.json();
+  const fetchServices = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (filters.category.trim()) params.set('category', filters.category.trim());
+    if (filters.location.trim()) params.set('location', filters.location.trim());
+
+    const url = params.toString() ? `${API_BASE}?${params}` : API_BASE;
+    const { ok, data } = await safeFetch(url);
+
+    if (ok) {
       setServices(data);
-      setApiStatus('Backend connected');
-    } catch (err) {
+      setApiStatus('Backend connected ✓');
+      setGlobalError('');
+    } else {
       setServices([]);
+      // Case 2: clear message — backend offline / request failed
+      const msg = data?.error || 'Request failed.';
       setApiStatus('Backend offline (start backend on port 5000)');
+      setGlobalError(`Backend offline — ${msg}`);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     fetchServices();
@@ -51,39 +88,36 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setFormError('');
 
+    // Frontend validation — clear messages before hitting the API
     if (!form.title.trim()) {
-      setError('Title is required.');
+      setFormError('Title is required.');
       return;
     }
-    if (!form.price || Number(form.price) <= 0) {
-      setError('Price must be greater than 0.');
+    const parsedPrice = Number(form.price);
+    if (!form.price || isNaN(parsedPrice)) {
+      setFormError('Please enter a valid number for price.');
+      return;
+    }
+    if (parsedPrice <= 0) {
+      setFormError('Price must be greater than 0.');
       return;
     }
 
-    if (editingId) {
-      const res = await fetch(`${API_BASE}/${editingId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(form)
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setError(body.error || 'Update failed.');
-        return;
-      }
-    } else {
-      const res = await fetch(API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(form)
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setError(body.error || 'Create failed.');
-        return;
-      }
+    const url = editingId ? `${API_BASE}/${editingId}` : API_BASE;
+    const method = editingId ? 'PUT' : 'POST';
+
+    const { ok, data } = await safeFetch(url, {
+      method,
+      headers: authHeaders(),
+      body: JSON.stringify(form)
+    });
+
+    if (!ok) {
+      // Show the backend's error message directly in the form area
+      setFormError(data?.error || (editingId ? 'Update failed.' : 'Create failed.'));
+      return;
     }
 
     setForm({ title: '', description: '', category: '', location: '', price: '' });
@@ -92,18 +126,17 @@ function App() {
   };
 
   const handleDelete = async (id) => {
-    setError('');
-    const res = await fetch(`${API_BASE}/${id}`, {
-      method: 'DELETE'
-      ,
+    setGlobalError('');
+    const { ok, data } = await safeFetch(`${API_BASE}/${id}`, {
+      method: 'DELETE',
       headers: authHeaders()
     });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.error || 'Delete failed.');
+
+    if (!ok) {
+      // Case 3: 404 — "Item not found", don't silently fail
+      setGlobalError(data?.error || 'Delete failed.');
       return;
     }
-
     fetchServices();
   };
 
@@ -115,8 +148,8 @@ function App() {
       location: service.location,
       price: service.price
     });
-
     setEditingId(service.id);
+    setFormError('');
   };
 
   const handleFilter = async (e) => {
@@ -126,31 +159,31 @@ function App() {
 
   const handleFindById = async (e) => {
     e.preventDefault();
-    setError('');
+    setFindError('');
     setFoundService(null);
 
     if (!findId.trim()) {
-      setError('Please enter an ID to find.');
+      setFindError('Please enter an ID.');
       return;
     }
 
-    const res = await fetch(`${API_BASE}/${findId}`);
-    if (!res.ok) {
-      setError('Service not found.');
+    // Case 3: validate numeric ID on the frontend before calling the API
+    const numId = Number(findId);
+    if (isNaN(numId) || !Number.isInteger(numId) || numId <= 0) {
+      setFindError('Please enter a valid ID (positive integer).');
       return;
     }
 
-    const data = await res.json();
+    const { ok, data } = await safeFetch(`${API_BASE}/${numId}`);
+
+    if (!ok) {
+      // Case 3: show backend's 404 message; don't silently fail
+      setFindError(data?.error || `Item not found: no service with id ${numId}.`);
+      return;
+    }
+
     setFoundService(data);
   };
-
-  const filteredServices = services.filter(s => {
-    const categoryOk = !filters.category.trim()
-      || String(s.category || '').toLowerCase().includes(filters.category.trim().toLowerCase());
-    const locationOk = !filters.location.trim()
-      || String(s.location || '').toLowerCase().includes(filters.location.trim().toLowerCase());
-    return categoryOk && locationOk;
-  });
 
   return (
     <div className="app">
@@ -175,10 +208,16 @@ function App() {
           </div>
         </header>
 
-        {error && <p className="error">{error}</p>}
+        {/* Global error banner (backend offline, delete errors, etc.) */}
+        {globalError && (
+          <div className="error-banner" role="alert">
+            ⚠️ {globalError}
+          </div>
+        )}
 
+        {/* ── Search & Filter ── */}
         <section className="panel">
-          <h2>Search & Filter</h2>
+          <h2>Search &amp; Filter</h2>
           <form onSubmit={handleFilter} className="row">
             <input
               placeholder="Filter by category"
@@ -195,8 +234,7 @@ function App() {
               type="button"
               className="ghost"
               onClick={() => {
-                const cleared = { category: '', location: '' };
-                setFilters(cleared);
+                setFilters({ category: '', location: '' });
                 fetchServices();
               }}
             >
@@ -204,7 +242,7 @@ function App() {
             </button>
           </form>
 
-          <form onSubmit={handleFindById} className="row">
+          <form onSubmit={handleFindById} className="row" style={{ marginTop: '0.75rem' }}>
             <input
               placeholder="Find by ID"
               value={findId}
@@ -213,6 +251,8 @@ function App() {
             <button type="submit">Find</button>
           </form>
 
+          {findError && <p className="error">{findError}</p>}
+
           {foundService && (
             <div className="found">
               Found: <strong>{foundService.title}</strong> in {foundService.location} ({foundService.price} EUR)
@@ -220,9 +260,11 @@ function App() {
           )}
         </section>
 
+        {/* ── Add / Edit Form ── */}
         {(role === 'provider' || role === 'admin') ? (
           <section className="panel">
             <h2>{editingId ? 'Edit Service' : 'Add New Service'}</h2>
+            {formError && <p className="error">{formError}</p>}
             <form onSubmit={handleSubmit} className="form-grid">
               <input
                 placeholder="Title"
@@ -253,22 +295,38 @@ function App() {
               <button type="submit" className="primary">
                 {editingId ? 'Update Service' : 'Add Service'}
               </button>
+              {editingId && (
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => {
+                    setEditingId(null);
+                    setForm({ title: '', description: '', category: '', location: '', price: '' });
+                    setFormError('');
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
             </form>
           </section>
         ) : (
           <section className="panel">
             <h2>Read-Only Mode</h2>
-            <p className="empty">Customer role can browse and find services, but cannot add, edit, or delete.</p>
+            <p className="empty">
+              Customer role can browse and find services, but cannot add, edit, or delete.
+            </p>
           </section>
         )}
 
+        {/* ── Services List ── */}
         <section className="panel">
-          <h2>Services ({filteredServices.length})</h2>
+          <h2>Services ({services.length})</h2>
           <div className="list">
-            {filteredServices.length === 0 && (
+            {services.length === 0 && (
               <p className="empty">No services found for the current filter.</p>
             )}
-            {filteredServices.map(s => (
+            {services.map(s => (
               <article key={s.id} className="card">
                 <div>
                   <h3>{s.title}</h3>
