@@ -35,9 +35,9 @@ export default function BookingsPage() {
   }, [user, navigate]);
 
   const fetchBookings = async () => {
-    const params = user?.role?.toLowerCase() === 'provider'
-      ? `providerId=${user.id}`
-      : `userId=${user.id}`;
+    const role = user?.role?.toLowerCase();
+    const params =
+      role === 'admin' ? '' : role === 'provider' ? `providerId=${user.id}` : `userId=${user.id}`;
     const { ok, data } = await api.getBookings(params, token);
     if (ok) setBookings(data);
     else setError(data?.error || 'Failed to load bookings.');
@@ -81,15 +81,24 @@ export default function BookingsPage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">📅 Bookings</h1>
+      <div className="page-hero">
+        <h1>Bookings</h1>
+        <p>
+          {isAdmin
+            ? 'Full visibility across the platform — moderate statuses and resolve issues.'
+            : isProvider
+              ? 'Incoming requests from customers — approve, complete, or reject.'
+              : 'Create reservations and track status from pending to completed.'}
+        </p>
+      </div>
 
-      {error && <div className="error-banner" role="alert">⚠️ {error}</div>}
-      {success && <div className="success-banner" role="status">✅ {success}</div>}
+      {error && <div className="error-banner" role="alert">{error}</div>}
+      {success && <div className="success-banner" role="status">{success}</div>}
 
-      {/* Create Booking Form — customers only */}
-      {!isProvider && (
+      {/* Create booking — customers only */}
+      {!isProvider && !isAdmin && (
         <section className="panel">
-          <h2>➕ New Booking</h2>
+          <h2>New booking</h2>
           {formError && <p className="error">{formError}</p>}
           <form onSubmit={handleCreate} className="form-grid">
             <input

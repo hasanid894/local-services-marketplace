@@ -65,14 +65,17 @@ export default function ReviewsPage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">⭐ Reviews</h1>
+      <div className="page-hero">
+        <h1>Reviews</h1>
+        <p>See what the community says about providers, or share your own experience after a booking.</p>
+      </div>
 
-      {error && <div className="error-banner" role="alert">⚠️ {error}</div>}
-      {success && <div className="success-banner" role="status">✅ {success}</div>}
+      {error && <div className="error-banner" role="alert">{error}</div>}
+      {success && <div className="success-banner" role="status">{success}</div>}
 
       {/* Filter */}
       <section className="panel">
-        <h2>🔍 Filter Reviews</h2>
+        <h2>Filter reviews</h2>
         <form onSubmit={handleFilter} className="row">
           <input
             placeholder="Filter by Provider ID"
@@ -87,7 +90,7 @@ export default function ReviewsPage() {
       {/* Post Review Form — logged-in customers */}
       {user && user.role?.toLowerCase() !== 'provider' && (
         <section className="panel">
-          <h2>✍️ Write a Review</h2>
+          <h2>Write a review</h2>
           {formError && <p className="error">{formError}</p>}
           <form onSubmit={handleCreate} className="form-grid">
             <input

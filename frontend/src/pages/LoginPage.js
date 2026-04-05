@@ -25,7 +25,7 @@ export default function LoginPage() {
       return;
     }
     login(data.user, data.token);
-    navigate('/');
+    navigate('/dashboard');
   };
 
   return (

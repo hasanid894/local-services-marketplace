@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:5000/api';
+const BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
 
 /**
  * safeFetch — wraps fetch with error handling.
@@ -70,4 +70,7 @@ export const api = {
   deleteReview: (id, token) => safeFetch(`${BASE}/reviews/${id}`, {
     method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
   }),
+
+  // ── Users (admin / platform views) ───────────────────────────────────
+  getUsers: () => safeFetch(`${BASE}/users`),
 };

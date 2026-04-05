@@ -99,17 +99,20 @@ export default function ServicesPage() {
   };
 
   return (
-    <div className="page">
-      {/* Status bar */}
+    <div className="page page-services">
+      <div className="page-hero">
+        <h1>Marketplace</h1>
+        <p>Browse local services, filter by category or city, and book providers you trust.</p>
+      </div>
+
       <div className={`status-bar ${apiStatus.startsWith('Backend connected') ? 'ok' : 'bad'}`}>
         {apiStatus}
       </div>
 
-      {globalError && <div className="error-banner" role="alert">⚠️ {globalError}</div>}
+      {globalError && <div className="error-banner" role="alert">{globalError}</div>}
 
-      {/* Search & Filter */}
       <section className="panel">
-        <h2>🔍 Search & Filter</h2>
+        <h2>Search &amp; filter</h2>
         <form onSubmit={handleFilter} className="row">
           <input placeholder="Filter by category" value={filters.category}
             onChange={e => setFilters({ ...filters, category: e.target.value })} />
@@ -163,7 +166,7 @@ export default function ServicesPage() {
 
       {/* Services List */}
       <section className="panel">
-        <h2>🛠️ Services ({services.length})</h2>
+        <h2>Services ({services.length})</h2>
         <div className="cards-grid">
           {services.length === 0 && <p className="empty">No services found.</p>}
           {services.map(s => (
