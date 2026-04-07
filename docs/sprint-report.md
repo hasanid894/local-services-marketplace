@@ -27,6 +27,9 @@ node server.js
 # Përdor DatabaseRepository skeleton
 USE_DB=true node server.js
 ```
+**Evidencë**
+<img width="1055" height="126" alt="image" src="https://github.com/user-attachments/assets/32e2be87-6f83-4e54-84b1-346a542c5840" />
+
 
 ---
 
@@ -49,6 +52,15 @@ USE_DB=true node server.js
 - `ServiceService.findById()`: mbron ndaj ID-ve jo-numerike, kthen `null` në vend se të crash-ojë
 - Të gjitha përgjigjet 404 kthejnë `"Item not found: no service with id X."` — mesazh i qëndrueshëm i përdorur kudo
 - Console UI (`menu.js`) vërteton të gjitha ID-të dhe çmimet e futura nga përdoruesi para se të thërrasë ndonjë metodë shërbimi, me mesazhe miqësore si `"Please enter a valid number for price."`
+
+### Error Handling
+- Screenshot nga UI kur jepet input invalid
+- 
+<img width="838" height="329" alt="image" src="https://github.com/user-attachments/assets/8627ebec-0071-4531-81c2-1c3c6563da40" />
+<img width="922" height="366" alt="image" src="https://github.com/user-attachments/assets/19b3a496-327f-41a2-889a-20accf67c2a5" />
+<img width="906" height="347" alt="image" src="https://github.com/user-attachments/assets/af112faf-100d-4fc6-8878-f078cc710fa3" />
+
+
 
 ---
 
@@ -96,11 +108,22 @@ npm test
 | Të dhënat ruhen mes instancave të repo-s (disk I/O) | ✓ |
 | Rreshtat CSV të deformuar anashkalohen, rreshtat e vlefshëm ngarkohen (nuk crash-on) | ✓ |
 
+
+**Evidenca**
+<img width="1210" height="342" alt="image" src="https://github.com/user-attachments/assets/d059248f-85f9-46fd-9f84-8e0466e0cc42" />
+<img width="1044" height="311" alt="image" src="https://github.com/user-attachments/assets/b41c8b35-b4e7-4360-97f1-ef0636df5e36" />
+<img width="1109" height="308" alt="image" src="https://github.com/user-attachments/assets/2902f8d4-fc85-4673-a2d0-66048778e22f" />
+<img width="931" height="138" alt="image" src="https://github.com/user-attachments/assets/b62173d3-bb4e-4d5f-ae11-c2a70f5562e3" />
+
+
+
+
 ---
 
 ## Çfarë Mbeti
 
-Asgjë nga plani i sprint-it nuk mbeti e parealizuar. Të tre deliverable-t u implementuan:
+Të gjitha deliverable-t e planifikuara për sprint-in u implementuan me sukses.
+
 - DatabaseRepository skeleton me ndërprerësin e konfigurimit ✓
 - Trajtimi i gabimeve nëpër Repository, Service, UI dhe Frontend ✓
 - Projekti i testeve me 24 teste kalues që mbulojnë të gjitha rastet e planifikuara ✓
