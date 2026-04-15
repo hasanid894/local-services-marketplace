@@ -1,11 +1,16 @@
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
 const controller = require('../controllers/userController');
+const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 
-router.get('/', controller.getUsers);
-router.get('/:id', controller.getUser);
-router.post('/', controller.createUser);
-router.put('/:id', controller.updateUser);
-router.delete('/:id', controller.deleteUser);
+// Admin only — list all users or create a user account manually
+router.get('/',        verifyToken, requireRole('admin'), controller.getUsers);
+router.post('/',       verifyToken, requireRole('admin'), controller.createUser);
+router.delete('/:id',  verifyToken, requireRole('admin'), controller.deleteUser);
+
+// Any authenticated user — view or update a profile
+// (Controllers should also verify ownership: req.user.id === req.params.id, unless admin)
+router.get('/:id',    verifyToken, controller.getUser);
+router.put('/:id',    verifyToken, controller.updateUser);
 
 module.exports = router;

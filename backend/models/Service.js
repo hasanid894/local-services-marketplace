@@ -1,43 +1,58 @@
 /**
- * Service Model
- * Represents a service offered by a Provider in the Local Services Marketplace.
+ * Service Model — aligned with the actual `services` PostgreSQL table.
+ *
+ * DB columns: id, provider_id, category_id, title, description, price,
+ *             location, latitude, longitude, is_active, created_at
+ *
+ * Note: services use category_id (FK to categories table), not a string category.
  */
 class Service {
-  /**
-   * @param {number} id
-   * @param {number} providerId
-   * @param {string} title
-   * @param {string} description
-   * @param {string} category
-   * @param {string} location
-   * @param {number} price
-   * @param {'active'|'inactive'} status
-   * @param {string} createdAt
-   */
-  constructor(id, providerId, title, description, category, location, price, status = 'active', createdAt = new Date().toISOString()) {
-    this.id = id;
-    this.providerId = providerId;
-    this.title = title;
+  constructor(
+    id,
+    providerId,
+    categoryId,
+    title,
+    description = '',
+    price,
+    location    = '',
+    latitude    = null,
+    longitude   = null,
+    isActive    = true,
+    createdAt   = new Date().toISOString()
+  ) {
+    this.id          = id;
+    this.providerId  = providerId;
+    this.categoryId  = categoryId;
+    this.title       = title;
     this.description = description;
-    this.category = category;
-    this.location = location;
-    this.price = price;
-    this.status = status;
-    this.createdAt = createdAt;
+    this.price       = price;
+    this.location    = location;
+    this.latitude    = latitude;
+    this.longitude   = longitude;
+    this.isActive    = isActive;
+    this.createdAt   = createdAt;
   }
- 
+
   toCSV() {
-    return `${this.id},${this.providerId},${this.title},${this.description},${this.category},${this.location},${this.price},${this.status},${this.createdAt}`;
+    return `${this.id},${this.providerId},${this.categoryId},${this.title},${this.description},${this.price},${this.location},${this.latitude},${this.longitude},${this.isActive},${this.createdAt}`;
   }
- 
+
   static fromCSV(line) {
-    const [id, providerId, title, description, category, location, price, status, createdAt] = line.split(',');
-    return new Service(Number(id), Number(providerId), title, description, category, location, Number(price), status, createdAt);
+    const [id, providerId, categoryId, title, description, price, location, latitude, longitude, isActive, createdAt] = line.split(',');
+    return new Service(
+      Number(id), Number(providerId), Number(categoryId),
+      title, description, Number(price),
+      location || '',
+      latitude  ? Number(latitude)  : null,
+      longitude ? Number(longitude) : null,
+      isActive === 'true',
+      createdAt
+    );
   }
- 
+
   static csvHeader() {
-    return 'id,providerId,title,description,category,location,price,status,createdAt';
+    return 'id,providerId,categoryId,title,description,price,location,latitude,longitude,isActive,createdAt';
   }
 }
- 
+
 module.exports = Service;

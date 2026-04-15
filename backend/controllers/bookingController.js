@@ -1,23 +1,21 @@
-const path = require('path');
-const FileRepository = require('../repositories/FileRepository');
-const BookingService = require('../services/BookingService');
-const Booking = require('../models/Booking');
+const { createBookingRepository } = require('../repositories/BookingRepository');
+const BookingService              = require('../services/BookingService');
 
-const repo = new FileRepository(
-  path.join(__dirname, '../data/csv/bookings.csv'),
-  Booking.fromCSV,
-  Booking.csvHeader
-);
-
+const repo           = createBookingRepository();
 const bookingService = new BookingService(repo);
 
-exports.getBookings = (req, res) => {
+/**
+ * GET /api/bookings
+ * Query params: userId, providerId
+ */
+exports.getBookings = async (req, res) => {
   try {
     const { userId, providerId } = req.query;
-    let data = bookingService.getAllBookings();
+    let data;
 
-    if (userId) data = bookingService.getBookingsByUser(userId);
-    if (providerId) data = data.filter(b => b.providerId === Number(providerId));
+    if (userId)     data = await bookingService.getBookingsByUser(userId);
+    else if (providerId) data = await bookingService.getBookingsByProvider(providerId);
+    else            data = await bookingService.getAllBookings();
 
     res.json(data);
   } catch (err) {
@@ -25,9 +23,12 @@ exports.getBookings = (req, res) => {
   }
 };
 
-exports.getBookingById = (req, res) => {
+/**
+ * GET /api/bookings/:id
+ */
+exports.getBookingById = async (req, res) => {
   try {
-    const booking = bookingService.getBookingById(Number(req.params.id));
+    const booking = await bookingService.getBookingById(Number(req.params.id));
     if (!booking) return res.status(404).json({ error: 'Booking not found.' });
     res.json(booking);
   } catch (err) {
@@ -35,27 +36,38 @@ exports.getBookingById = (req, res) => {
   }
 };
 
-exports.createBooking = (req, res) => {
+/**
+ * POST /api/bookings
+ * Body: { userId, serviceId, providerId, scheduledDate, totalPrice }
+ */
+exports.createBooking = async (req, res) => {
   try {
-    const created = bookingService.createBooking(req.body);
+    const created = await bookingService.createBooking(req.body);
     res.status(201).json(created);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-exports.updateBookingStatus = (req, res) => {
+/**
+ * PATCH /api/bookings/:id/status
+ * Body: { status } — one of 'pending'|'confirmed'|'completed'|'cancelled'
+ */
+exports.updateBookingStatus = async (req, res) => {
   try {
-    const updated = bookingService.updateStatus(Number(req.params.id), req.body.status);
+    const updated = await bookingService.updateStatus(Number(req.params.id), req.body.status);
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-exports.deleteBooking = (req, res) => {
+/**
+ * DELETE /api/bookings/:id
+ */
+exports.deleteBooking = async (req, res) => {
   try {
-    const result = bookingService.deleteBooking(Number(req.params.id));
+    const result = await bookingService.deleteBooking(Number(req.params.id));
     res.json(result);
   } catch (err) {
     res.status(404).json({ error: err.message });

@@ -1,124 +1,79 @@
+/**
+ * ServiceService — Business logic for services.
+ * All methods async (compatible with both DB and CSV repositories).
+ *
+ * Note: Services use categoryId (FK), not a freeform category string.
+ *       Use CategoryRepository.findOrCreate() before calling createService().
+ */
 class ServiceService {
   constructor(repository) {
     this.repository = repository;
   }
 
-  list(filter = {}) {
-    let services = this.repository.getAll();
-
-    if (filter.category && String(filter.category).trim()) {
-      const categoryQuery = String(filter.category).trim().toLowerCase();
-      services = services.filter(s =>
-        String(s.category || '').toLowerCase().includes(categoryQuery)
-      );
+  async getAllServices(filter = {}) {
+    // DB repo has getFiltered(); CSV repo also exposes it
+    if (typeof this.repository.getFiltered === 'function') {
+      return this.repository.getFiltered(filter);
     }
-
-    if (filter.location && String(filter.location).trim()) {
-      services = services.filter(s =>
-        String(s.location || '').toLowerCase().includes(String(filter.location).trim().toLowerCase())
-      );
-    }
-
-    if (filter.providerId !== undefined && filter.providerId !== null && filter.providerId !== '') {
-      services = services.filter(s => s.providerId === Number(filter.providerId));
-    }
-
-    return services;
+    return this.repository.getAll();
   }
 
-  findById(id) {
-    // Case 3: invalid / non-numeric IDs — return null instead of crashing
+  async getServiceById(id) {
     const numericId = Number(id);
-    if (isNaN(numericId) || !Number.isInteger(numericId) || numericId <= 0) {
-      return null;
-    }
+    if (!Number.isFinite(numericId) || numericId <= 0) return null;
     return this.repository.getById(numericId);
   }
 
-  add({ providerId, title, name, description, category, location, price }) {
-    const normalizedTitle = (title ?? name ?? '').trim();
-    if (!normalizedTitle) {
-      throw new Error('Name cannot be empty.');
-    }
+  async createService({ providerId, categoryId, title, description, price, location, latitude, longitude, isActive }) {
+    const normalizedTitle = (title ?? '').trim();
+    if (!normalizedTitle) throw new Error('Title cannot be empty.');
 
-    // Case 2: invalid price input — clear message instead of NaN logic errors
     const parsedPrice = Number(price);
     if (price === undefined || price === null || price === '' || isNaN(parsedPrice)) {
       throw new Error('Please enter a valid number for price.');
     }
-    if (parsedPrice <= 0) {
-      throw new Error('Price must be greater than 0.');
-    }
+    if (parsedPrice <= 0) throw new Error('Price must be greater than 0.');
+    if (!categoryId)       throw new Error('Category is required.');
 
-    const service = {
-      id: null,
+    return this.repository.add({
       providerId: Number(providerId) || 0,
-      title: normalizedTitle,
+      categoryId: Number(categoryId),
+      title:      normalizedTitle,
       description: description || '',
-      category: category || '',
-      location: location || '',
-      price: parsedPrice,
-      status: 'active',
-      createdAt: new Date().toISOString()
-    };
-
-    return this.repository.add(service);
+      price:      parsedPrice,
+      location:   location  || '',
+      latitude:   latitude  ?? null,
+      longitude:  longitude ?? null,
+      isActive:   isActive  ?? true,
+    });
   }
 
-  getAllServices(filter = {}) {
-    return this.list(filter);
-  }
+  async updateService(id, data) {
+    const numericId = Number(id);
+    const existing  = await this.repository.getById(numericId);
+    if (!existing) throw new Error(`Item not found: no service with id ${id}.`);
 
-  getServiceById(id) {
-    return this.findById(id);
-  }
-
-  createService(payload) {
-    return this.add(payload);
-  }
-
-  updateService(id, data) {
-    const existing = this.repository.getById(Number(id));
-    if (!existing) {
-      throw new Error(`Item not found: no service with id ${id}.`);
-    }
-
-    // Validate price if provided
     if (data.price !== undefined) {
-      const parsedPrice = Number(data.price);
-      if (isNaN(parsedPrice)) {
-        throw new Error('Please enter a valid number for price.');
-      }
-      if (parsedPrice <= 0) {
-        throw new Error('Price must be greater than 0.');
-      }
+      const p = Number(data.price);
+      if (isNaN(p))  throw new Error('Please enter a valid number for price.');
+      if (p <= 0)    throw new Error('Price must be greater than 0.');
     }
 
-    // Validate title if provided
-    if (data.title !== undefined && data.title.trim() === '') {
+    if (data.title !== undefined && String(data.title).trim() === '') {
       throw new Error('Title cannot be empty.');
     }
 
-    return this.repository.update(id, data);
+    return this.repository.update(numericId, data);
   }
 
-  deleteService(id) {
-    const deleted = this.repository.delete(id);
+  async deleteService(id) {
+    const numericId = Number(id);
+    const deleted   = await this.repository.delete(numericId);
     if (!deleted) throw new Error(`Item not found: no service with id ${id}.`);
     return { message: 'Service deleted successfully.' };
   }
 
-  // ── Convenience helpers ────────────────────────────────────────────────
-
-  getServicesByCategory(category) {
-    return this.getAllServices({ category });
-  }
-
-  getServicesByLocation(location) {
-    return this.getAllServices({ location });
-  }
-
-  getServicesByProvider(providerId) {
+  async getServicesByProvider(providerId) {
     return this.getAllServices({ providerId: Number(providerId) });
   }
 }

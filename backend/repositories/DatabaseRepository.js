@@ -1,106 +1,108 @@
 /**
- * DatabaseRepository - Skeleton implementation of IRepository.
+ * DatabaseRepository — Real PostgreSQL implementation of IRepository.
  *
- * This is a placeholder for a future PostgreSQL-backed repository.
- * It currently uses an in-memory store so the rest of the application
- * can be tested against this implementation without a real DB connection.
+ * Uses parameterised queries via the `pg` Pool helper in config/db.js.
+ * Column name mapping:
+ *   - JS camelCase fields ↔ SQL snake_case columns
  *
- * Architecture principle: Dependency Inversion (SOLID - DIP).
- * ServiceService and all controllers depend on IRepository, NOT on this
- * concrete class. Swapping FileRepository ↔ DatabaseRepository requires
- * only a one-line change in the factory/config (serviceController.js).
- *
- * To connect a real PostgreSQL database in the future:
- *   1. Run: npm install pg
- *   2. Replace the in-memory _data array with actual SQL queries.
- *   3. Make the methods async and update callers accordingly.
+ * All methods are async and return Promises.
+ * Controllers must use `await` when calling service/repository methods.
  */
 
+const { query } = require('../config/db');
 const IRepository = require('./IRepository');
 
+/**
+ * Convert a snake_case DB row object into whatever the model expects.
+ * Each concrete repository can override `_mapRow(row)` if the mapping differs.
+ */
 class DatabaseRepository extends IRepository {
   /**
-   * @param {string} tableName - The name of the database table (e.g. 'services').
-   *   Currently unused — reserved for when a real DB connection is added.
+   * @param {string} tableName - Exact PostgreSQL table name (e.g. 'services').
+   * @param {Function} mapRow - Optional function(row) → plain object. Defaults to identity.
+   * @param {string[]} insertColumns - Ordered list of JS field names used for INSERT.
+   * @param {Function} toDbRow - Function(entity) → array of values matching insertColumns.
    */
-  constructor(tableName = 'services') {
+  constructor(tableName, mapRow, insertColumns = [], toDbRow = null) {
     super();
-    this.tableName = tableName;
+    this.tableName     = tableName;
+    this._mapRow       = mapRow       || (row => row);
+    this._insertCols   = insertColumns;
+    this._toDbRow      = toDbRow      || (() => { throw new Error('toDbRow not implemented'); });
 
-    // In-memory store used as a placeholder until a real DB is connected.
-    // Replace with actual DB queries (e.g. pg Pool) in the future.
-    this._data = [];
-    this._nextIdCounter = 1;
+    console.log(`[DatabaseRepository] Using table "${this.tableName}" (PostgreSQL).`);
+  }
 
-    console.log(
-      `[DatabaseRepository] Initialized for table "${this.tableName}" ` +
-      `(in-memory mode — connect a real DB to replace this).`
+  // ── Helpers ─────────────────────────────────────────────────────────────
+
+  /** Build a $1, $2, ... placeholder string for N params. */
+  _placeholders(n, offset = 0) {
+    return Array.from({ length: n }, (_, i) => `$${i + 1 + offset}`).join(', ');
+  }
+
+  // ── IRepository implementation ──────────────────────────────────────────
+
+  /** SELECT * FROM table */
+  async getAll() {
+    const res = await query(`SELECT * FROM ${this.tableName} ORDER BY id`);
+    return res.rows.map(r => this._mapRow(r));
+  }
+
+  /** SELECT * FROM table WHERE id = $1 */
+  async getById(id) {
+    const res = await query(
+      `SELECT * FROM ${this.tableName} WHERE id = $1`,
+      [id]
     );
-  }
-
-  // -----------------------------------------------------------------------
-  // IRepository contract implementation
-  // -----------------------------------------------------------------------
-
-  /**
-   * Return all stored entities.
-   * Future: SELECT * FROM ${this.tableName}
-   */
-  getAll() {
-    return [...this._data];
+    return res.rows.length ? this._mapRow(res.rows[0]) : null;
   }
 
   /**
-   * Return a single entity by ID, or null if not found.
-   * Future: SELECT * FROM ${this.tableName} WHERE id = $1
+   * INSERT INTO table (col1, col2, ...) VALUES ($1, $2, ...) RETURNING *
+   * The entity must NOT include `id` or `created_at` — those are DB-generated.
    */
-  getById(id) {
-    return this._data.find(e => e.id === Number(id)) || null;
+  async add(entity) {
+    const values  = this._toDbRow(entity);
+    const colList = this._insertCols.join(', ');
+    const phList  = this._placeholders(values.length);
+
+    const res = await query(
+      `INSERT INTO ${this.tableName} (${colList}) VALUES (${phList}) RETURNING *`,
+      values
+    );
+    return this._mapRow(res.rows[0]);
+  }
+
+  /** No-op — PostgreSQL commits each statement atomically. */
+  async save() { /* intentional no-op */ }
+
+  /** DELETE FROM table WHERE id = $1 */
+  async delete(id) {
+    const res = await query(
+      `DELETE FROM ${this.tableName} WHERE id = $1 RETURNING id`,
+      [id]
+    );
+    return res.rowCount > 0;
   }
 
   /**
-   * Persist a new entity, auto-assigning an ID.
-   * Future: INSERT INTO ${this.tableName} (...) VALUES (...) RETURNING *
+   * UPDATE table SET col=$1, ... WHERE id=$N RETURNING *
+   * Only updates fields that are present in updatedData.
    */
-  add(entity) {
-    entity.id = this._nextIdCounter++;
-    this._data.push({ ...entity });
-    return entity;
-  }
+  async update(id, updatedData) {
+    // Build SET clause dynamically: col1=$1, col2=$2, ...
+    const entries = Object.entries(updatedData);
+    if (entries.length === 0) return this.getById(id);
 
-  /**
-   * Persist all current data (no-op for in-memory; would be a commit in a
-   * real transactional DB).
-   * Future: handled implicitly by the DB — leave as no-op.
-   */
-  save() {
-    // No-op for in-memory mode.
-    // In a real DB implementation this method is not needed because
-    // each query is its own atomic operation.
-  }
+    const setClauses = entries.map(([col], i) => `${col} = $${i + 1}`).join(', ');
+    const values     = entries.map(([, v]) => v);
+    values.push(id);
 
-  /**
-   * Delete an entity by ID. Returns false if not found.
-   * Future: DELETE FROM ${this.tableName} WHERE id = $1
-   */
-  delete(id) {
-    const index = this._data.findIndex(e => e.id === Number(id));
-    if (index === -1) return false;
-
-    this._data.splice(index, 1);
-    return true;
-  }
-
-  /**
-   * Update an existing entity's fields. Returns the updated entity or null.
-   * Future: UPDATE ${this.tableName} SET ... WHERE id = $1 RETURNING *
-   */
-  update(id, updatedData) {
-    const index = this._data.findIndex(e => e.id === Number(id));
-    if (index === -1) return null;
-
-    Object.assign(this._data[index], updatedData);
-    return { ...this._data[index] };
+    const res = await query(
+      `UPDATE ${this.tableName} SET ${setClauses} WHERE id = $${values.length} RETURNING *`,
+      values
+    );
+    return res.rows.length ? this._mapRow(res.rows[0]) : null;
   }
 }
 

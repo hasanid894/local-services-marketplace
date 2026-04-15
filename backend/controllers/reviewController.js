@@ -1,31 +1,31 @@
-const path = require('path');
-const FileRepository = require('../repositories/FileRepository');
-const ReviewService = require('../services/ReviewService');
-const Review = require('../models/Review');
+const { createReviewRepository } = require('../repositories/ReviewRepository');
+const ReviewService              = require('../services/ReviewService');
 
-const repo = new FileRepository(
-  path.join(__dirname, '../data/csv/reviews.csv'),
-  Review.fromCSV,
-  Review.csvHeader
-);
-
+const repo          = createReviewRepository();
 const reviewService = new ReviewService(repo);
 
-exports.getReviews = (req, res) => {
+/**
+ * GET /api/reviews
+ * Query params: providerId
+ */
+exports.getReviews = async (req, res) => {
   try {
     const { providerId } = req.query;
-    if (providerId) {
-      return res.json(reviewService.getReviewsByProvider(providerId));
-    }
-    res.json(reviewService.getAllReviews());
+    const data = providerId
+      ? await reviewService.getReviewsByProvider(providerId)
+      : await reviewService.getAllReviews();
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-exports.getReviewById = (req, res) => {
+/**
+ * GET /api/reviews/:id
+ */
+exports.getReviewById = async (req, res) => {
   try {
-    const review = reviewService.getReviewById(Number(req.params.id));
+    const review = await reviewService.getReviewById(Number(req.params.id));
     if (!review) return res.status(404).json({ error: 'Review not found.' });
     res.json(review);
   } catch (err) {
@@ -33,18 +33,25 @@ exports.getReviewById = (req, res) => {
   }
 };
 
-exports.createReview = (req, res) => {
+/**
+ * POST /api/reviews
+ * Body: { userId, providerId, bookingId, rating, comment }
+ */
+exports.createReview = async (req, res) => {
   try {
-    const created = reviewService.createReview(req.body);
+    const created = await reviewService.createReview(req.body);
     res.status(201).json(created);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-exports.deleteReview = (req, res) => {
+/**
+ * DELETE /api/reviews/:id
+ */
+exports.deleteReview = async (req, res) => {
   try {
-    const result = reviewService.deleteReview(Number(req.params.id));
+    const result = await reviewService.deleteReview(Number(req.params.id));
     res.json(result);
   } catch (err) {
     res.status(404).json({ error: err.message });

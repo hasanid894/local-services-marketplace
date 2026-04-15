@@ -1,3 +1,5 @@
 id,name,email,passwordHash,role,location,providerProfile,createdAt
 1,Devlete Hasani,hasanidevlete@gmail.com,$2b$10$JX33tAE6n3OV7VB0YmcP5.OluVAJtGJnDpWMzPwQckDLanO55pq1C,Customer,Mitrovice,null,2026-04-04T16:02:25.418Z
 2,Arta Berisha,arta@gmail.com,$2b$10$Lc.Fy9U36kdAvFVf5vXWo.vPp6guK30txfhyPscG4N2aoeCoAcoD2,Provider,Prishtine,null,2026-04-04T16:04:19.338Z
+3,Test User,test@example.com,$2b$10$5UXRp8xlWORx97oZxIJ1OODFAvX6.XXgCfk6Hx7ni7VLw1L7x.yrq,Customer,,null,2026-04-05T19:38:55.466Z
+4,Test User,newuser2@example.com,$2b$10$8hpqH1jcAapHRVsOg9ffMOcdC3NwgHpCFJUhrD0PMR/Rbfnla2Un.,Customer,,null,2026-04-05T19:39:15.671Z

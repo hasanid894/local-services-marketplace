@@ -1,14 +1,9 @@
-const path = require('path');
-const FileRepository = require('../repositories/FileRepository');
-const AuthService = require('../services/AuthService');
-const User = require('../models/User');
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
-const userRepo = new FileRepository(
-  path.join(__dirname, '../data/csv/users.csv'),
-  User.fromCSV,
-  User.csvHeader
-);
+const { createUserRepository } = require('../repositories/UserRepository');
+const AuthService              = require('../services/AuthService');
 
+const userRepo   = createUserRepository();
 const authService = new AuthService(userRepo);
 
 /**

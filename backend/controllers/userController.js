@@ -1,47 +1,69 @@
-const FileRepository = require('../repositories/FileRepository');
-const UserService = require('../services/UserService');
-const User = require('../models/User');
-const path = require('path');
+const { createUserRepository } = require('../repositories/UserRepository');
+const UserService              = require('../services/UserService');
 
-const repo = new FileRepository(
-  path.join(__dirname, '../data/csv/users.csv'),
-  User.fromCSV,
-  User.csvHeader
-);
-
+const repo    = createUserRepository();
 const service = new UserService(repo);
 
-exports.getUsers = (req, res) => {
-  res.json(service.getAllUsers());
-};
-
-exports.getUser = (req, res) => {
-  const user = service.getUserById(Number(req.params.id));
-  if (!user) return res.status(404).json({ error: 'Not found' });
-  res.json(user);
-};
-
-exports.createUser = (req, res) => {
+/**
+ * GET /api/users
+ */
+exports.getUsers = async (req, res) => {
   try {
-    const user = service.createUser(req.body);
-    res.status(201).json(user);
+    const users = await service.getAllUsers();
+    // Strip password hashes before responding
+    res.json(users.map(({ passwordHash: _omit, ...u }) => u));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * GET /api/users/:id
+ */
+exports.getUser = async (req, res) => {
+  try {
+    const user = await service.getUserById(Number(req.params.id));
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    const { passwordHash: _omit, ...safeUser } = user;
+    res.json(safeUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * POST /api/users
+ */
+exports.createUser = async (req, res) => {
+  try {
+    const user = await service.createUser(req.body);
+    const { passwordHash: _omit, ...safeUser } = user;
+    res.status(201).json(safeUser);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-exports.updateUser = (req, res) => {
+/**
+ * PUT /api/users/:id
+ */
+exports.updateUser = async (req, res) => {
   try {
-    const updated = service.updateUser(Number(req.params.id), req.body);
-    res.json(updated);
+    const updated = await service.updateUser(Number(req.params.id), req.body);
+    if (!updated) return res.status(404).json({ error: 'User not found.' });
+    const { passwordHash: _omit, ...safeUser } = updated;
+    res.json(safeUser);
   } catch (err) {
-    res.status(404).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
-exports.deleteUser = (req, res) => {
+/**
+ * DELETE /api/users/:id
+ */
+exports.deleteUser = async (req, res) => {
   try {
-    const result = service.deleteUser(Number(req.params.id));
+    const result = await service.deleteUser(Number(req.params.id));
     res.json(result);
   } catch (err) {
     res.status(404).json({ error: err.message });

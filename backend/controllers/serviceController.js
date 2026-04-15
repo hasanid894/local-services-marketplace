@@ -1,42 +1,11 @@
-const path = require('path');
-const FileRepository = require('../repositories/FileRepository');
-const DatabaseRepository = require('../repositories/DatabaseRepository');
-const ServiceService = require('../services/ServiceService');
-const Service = require('../models/Service');
+const { createServiceRepository } = require('../repositories/ServiceRepository');
+const ServiceService              = require('../services/ServiceService');
 
-// ─── Repository Factory ────────────────────────────────────────────────────
-// Set USE_DB=true in your environment (e.g. in a .env file or shell) to switch
-// from the CSV-backed FileRepository to the DatabaseRepository.
-// Example:
-//   Windows PowerShell:  $env:USE_DB="true" ; node server.js
-//   Linux/Mac:           USE_DB=true node server.js
-//
-// The ServiceService and all handlers below are NOT changed — only the
-// repository instance is swapped. This is the Open/Closed Principle in action.
-
-function createRepository() {
-  if (process.env.USE_DB === 'true') {
-    console.log('[Config] USE_DB=true → using DatabaseRepository (in-memory skeleton).');
-    return new DatabaseRepository('services');
-  }
-
-  console.log('[Config] USE_DB not set → using FileRepository (CSV).');
-  return new FileRepository(
-    path.join(__dirname, '../data/csv/services.csv'),
-    Service.fromCSV,
-    Service.csvHeader
-  );
-}
-
-const repo = createRepository();
+const repo    = createServiceRepository();
 const service = new ServiceService(repo);
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
-/**
- * Validate that a route param is a positive integer.
- * Returns the numeric ID on success, or sends a 400 response and returns null.
- */
 function parseId(req, res) {
   const id = Number(req.params.id);
   if (!req.params.id || isNaN(id) || !Number.isInteger(id) || id <= 0) {
@@ -46,16 +15,22 @@ function parseId(req, res) {
   return id;
 }
 
-// ─── Handlers ──────────────────────────────────────────────────────────────
+// ── Handlers ─────────────────────────────────────────────────────────────────
 
 /**
  * GET /api/services
+ * Query params: categoryId, location, providerId, activeOnly
  */
-exports.getServices = (req, res) => {
+exports.getServices = async (req, res) => {
   try {
-    const { category, location, providerId } = req.query;
-
-    const services = service.getAllServices({ category, location, providerId });
+    const { categoryId, location, providerId, activeOnly } = req.query;
+    const filter = {
+      categoryId:  categoryId  || undefined,
+      location:    location    || undefined,
+      providerId:  providerId  || undefined,
+      activeOnly:  activeOnly !== 'false', // default true
+    };
+    const services = await service.getAllServices(filter);
     res.json(services);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -65,15 +40,12 @@ exports.getServices = (req, res) => {
 /**
  * GET /api/services/:id
  */
-exports.getServiceById = (req, res) => {
+exports.getServiceById = async (req, res) => {
   try {
     const id = parseId(req, res);
-    if (id === null) return;              // 400 already sent
-
-    const found = service.getServiceById(id);
-    if (!found) {
-      return res.status(404).json({ error: `Item not found: no service with id ${id}.` });
-    }
+    if (id === null) return;
+    const found = await service.getServiceById(id);
+    if (!found) return res.status(404).json({ error: `No service with id ${id}.` });
     res.json(found);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -82,16 +54,17 @@ exports.getServiceById = (req, res) => {
 
 /**
  * POST /api/services
+ * Body: { providerId, categoryId, title, description, price, location, latitude, longitude }
  */
-exports.createService = (req, res) => {
+exports.createService = async (req, res) => {
   try {
     const payload = { ...req.body };
-    if (req.user?.role === 'provider') {
+    // Inject the authenticated provider's id if they don't supply one
+    if (req.user?.role === 'provider' && !payload.providerId) {
       payload.providerId = req.user.id;
     }
-
-    const newService = service.createService(payload);
-    res.json(newService);
+    const created = await service.createService(payload);
+    res.status(201).json(created);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -100,21 +73,20 @@ exports.createService = (req, res) => {
 /**
  * PUT /api/services/:id
  */
-exports.updateService = (req, res) => {
+exports.updateService = async (req, res) => {
   try {
     const id = parseId(req, res);
-    if (id === null) return;              // 400 already sent
+    if (id === null) return;
 
-    const existing = service.getServiceById(id);
-    if (!existing) {
-      return res.status(404).json({ error: `Item not found: no service with id ${id}.` });
-    }
+    const existing = await service.getServiceById(id);
+    if (!existing) return res.status(404).json({ error: `No service with id ${id}.` });
 
-    if (req.user?.role === 'provider' && existing.providerId !== req.user.id) {
+    const currentRole = String(req.user?.role || '').toLowerCase();
+    if (currentRole === 'provider' && existing.providerId !== req.user.id) {
       return res.status(403).json({ error: 'Providers can update only their own services.' });
     }
 
-    const updated = service.updateService(id, req.body);
+    const updated = await service.updateService(id, req.body);
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -124,21 +96,20 @@ exports.updateService = (req, res) => {
 /**
  * DELETE /api/services/:id
  */
-exports.deleteService = (req, res) => {
+exports.deleteService = async (req, res) => {
   try {
     const id = parseId(req, res);
-    if (id === null) return;              // 400 already sent
+    if (id === null) return;
 
-    const existing = service.getServiceById(id);
-    if (!existing) {
-      return res.status(404).json({ error: `Item not found: no service with id ${id}.` });
-    }
+    const existing = await service.getServiceById(id);
+    if (!existing) return res.status(404).json({ error: `No service with id ${id}.` });
 
-    if (req.user?.role === 'provider' && existing.providerId !== req.user.id) {
+    const currentRole = String(req.user?.role || '').toLowerCase();
+    if (currentRole === 'provider' && existing.providerId !== req.user.id) {
       return res.status(403).json({ error: 'Providers can delete only their own services.' });
     }
 
-    const result = service.deleteService(id);
+    const result = await service.deleteService(id);
     res.json(result);
   } catch (err) {
     res.status(404).json({ error: err.message });

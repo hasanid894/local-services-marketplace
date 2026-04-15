@@ -1,60 +1,55 @@
 /**
- * UserService - Logjika e biznesit për Users.
- *
- * SOLID: Single Responsibility Principle (SRP)
- * - Merret VETËM me logjikën e biznesit për Users.
- * - Persistence delegohet tek UserRepository (FileRepository).
- *
- * SOLID: Dependency Inversion Principle (DIP)
- * - Varet nga IRepository (abstrakti), jo nga implementimi konkret.
+ * UserService — Business logic for users.
+ * All methods async; compatible with DB and CSV repositories.
  */
 class UserService {
   constructor(repository) {
     this.repository = repository;
   }
- 
-  getAllUsers() {
+
+  async getAllUsers() {
     return this.repository.getAll();
   }
- 
-  getUserById(id) {
-    return this.repository.getById(id);
+
+  async getUserById(id) {
+    return this.repository.getById(Number(id));
   }
- 
-  getUserByEmail(email) {
-    return this.repository.getAll().find(u => u.email === email) || null;
+
+  async getUserByEmail(email) {
+    if (typeof this.repository.findByEmail === 'function') {
+      return this.repository.findByEmail(email);
+    }
+    const all = await this.repository.getAll();
+    return all.find(u => u.email === email.trim().toLowerCase()) || null;
   }
- 
-  createUser({ name, email, passwordHash, role = 'Customer', location = '' }) {
-    const existing = this.getUserByEmail(email);
+
+  async createUser({ name, email, passwordHash, role = 'customer', location = '', latitude = null, longitude = null }) {
+    const existing = await this.getUserByEmail(email);
     if (existing) throw new Error('Email already registered.');
 
-   const user = new (require('../models/User'))(
-      null,
+    return this.repository.add({
       name,
-      email,
+      email: email.trim().toLowerCase(),
       passwordHash,
-      role,
-      location
-    );
+      role:      String(role).toLowerCase(),
+      location:  location  || '',
+      latitude:  latitude  ?? null,
+      longitude: longitude ?? null,
+      isVerified: false,
+    });
+  }
 
-    return this.repository.add(user);
-    
-  }
- 
-  updateUser(id, data) {
-    const user = this.repository.getById(id);
+  async updateUser(id, data) {
+    const user = await this.repository.getById(Number(id));
     if (!user) throw new Error('User not found.');
-   
-    return this.repository.update(id, data);
+    return this.repository.update(Number(id), data);
   }
- 
-  deleteUser(id) {
-    const deleted = this.repository.delete(id);
+
+  async deleteUser(id) {
+    const deleted = await this.repository.delete(Number(id));
     if (!deleted) throw new Error('User not found.');
     return { message: 'User deleted successfully.' };
   }
 }
- 
+
 module.exports = UserService;
- 

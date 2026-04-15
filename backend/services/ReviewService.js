@@ -1,50 +1,55 @@
+/**
+ * ReviewService — Business logic for reviews.
+ * All methods async.
+ */
 class ReviewService {
   constructor(repository) {
     this.repository = repository;
   }
 
-  getAllReviews() {
+  async getAllReviews() {
     return this.repository.getAll();
   }
 
-  getReviewById(id) {
-    return this.repository.getById(id);
+  async getReviewById(id) {
+    return this.repository.getById(Number(id));
   }
 
-  getReviewsByProvider(providerId) {
-    return this.repository.getAll().filter(r => r.providerId === Number(providerId));
+  async getReviewsByProvider(providerId) {
+    if (typeof this.repository.getByProviderId === 'function') {
+      return this.repository.getByProviderId(providerId);
+    }
+    const all = await this.repository.getAll();
+    return all.filter(r => r.providerId === Number(providerId));
   }
 
-  getAverageRating(providerId) {
-    const reviews = this.getReviewsByProvider(providerId);
-    if (reviews.length === 0) return 0;
-
-    const total = reviews.reduce((sum, r) => sum + r.rating, 0);
+  async getAverageRating(providerId) {
+    if (typeof this.repository.getAverageRating === 'function') {
+      return this.repository.getAverageRating(providerId);
+    }
+    const reviews = await this.getReviewsByProvider(providerId);
+    if (!reviews.length) return '0.0';
+    const total = reviews.reduce((s, r) => s + r.rating, 0);
     return (total / reviews.length).toFixed(1);
   }
 
-  createReview({ userId, providerId, bookingId, rating, comment = '' }) {
-    if (rating < 1 || rating > 5) {
-      throw new Error('Rating must be between 1 and 5.');
-    }
+  async createReview({ userId, providerId, bookingId, rating, comment = '' }) {
+    const r = Number(rating);
+    if (isNaN(r) || r < 1 || r > 5) throw new Error('Rating must be between 1 and 5.');
+    if (!userId || !providerId)       throw new Error('userId and providerId are required.');
 
-    const review = {
-      id: null,
-      userId,
-      providerId,
-      bookingId,
-      rating,
+    return this.repository.add({
+      userId:     Number(userId),
+      providerId: Number(providerId),
+      bookingId:  bookingId ? Number(bookingId) : null,
+      rating:     r,
       comment,
-      createdAt: new Date().toISOString()
-    };
-
-    return this.repository.add(review);
+    });
   }
 
-  deleteReview(id) {
-    const deleted = this.repository.delete(id);
+  async deleteReview(id) {
+    const deleted = await this.repository.delete(Number(id));
     if (!deleted) throw new Error('Review not found.');
-
     return { message: 'Review deleted successfully.' };
   }
 }
