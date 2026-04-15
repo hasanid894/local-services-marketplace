@@ -1,8 +1,8 @@
 # Auditimi i Projektit — Local Services Marketplace
 
-**Autori:** Devlete Hasani  
+**Autore:** Devlete Hasani  
 **Data:** 15 Prill 2026  
-**Detyrë Kursi:** Project Audit & Improvement Sprint (Pjesa 1)
+** Project Audit & Improvement Sprint (Pjesa 1)
 
 ---
 
