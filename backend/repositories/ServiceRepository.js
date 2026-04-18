@@ -47,9 +47,15 @@ function toDbRow(entity) {
 
 // ── DB-backed repository ─────────────────────────────────────────────────────
 
+// Valid snake_case columns that may appear in UPDATE SET clauses (Weakness 6 fix)
+const SERVICE_ALLOWED_COLS = new Set([
+  'provider_id', 'category_id', 'title', 'description',
+  'price', 'location', 'latitude', 'longitude', 'is_active',
+]);
+
 class ServiceDatabaseRepository extends DatabaseRepository {
   constructor() {
-    super('services', mapRow, INSERT_COLS, toDbRow);
+    super('services', mapRow, INSERT_COLS, toDbRow, SERVICE_ALLOWED_COLS);
   }
 
   /**

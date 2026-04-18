@@ -3,11 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
+// Status values must exactly match the backend/DB CHECK constraint:
+// 'pending' | 'confirmed' | 'completed' | 'cancelled'
 const STATUS_COLORS = {
-  Pending: '#f59e0b',
-  Approved: '#10b981',
-  Rejected: '#ef4444',
-  Completed: '#6366f1',
+  pending:   '#f59e0b',  // amber  — waiting for provider action
+  confirmed: '#10b981',  // green  — provider approved
+  completed: '#6366f1',  // indigo — work finished
+  cancelled: '#ef4444',  // red    — declined or withdrawn
 };
 
 export default function BookingsPage() {
@@ -100,37 +102,47 @@ export default function BookingsPage() {
         <section className="panel">
           <h2>New booking</h2>
           {formError && <p className="error">{formError}</p>}
-          <form onSubmit={handleCreate} className="form-grid">
-            <input
-              id="booking-serviceId"
-              placeholder="Service ID *"
-              type="number"
-              value={form.serviceId}
-              onChange={e => setForm({ ...form, serviceId: e.target.value })}
-            />
-            <input
-              id="booking-providerId"
-              placeholder="Provider ID *"
-              type="number"
-              value={form.providerId}
-              onChange={e => setForm({ ...form, providerId: e.target.value })}
-            />
-            <input
-              id="booking-date"
-              type="date"
-              value={form.scheduledDate}
-              onChange={e => setForm({ ...form, scheduledDate: e.target.value })}
-            />
-            <textarea
-              id="booking-notes"
-              placeholder="Notes (optional)"
-              value={form.notes}
-              onChange={e => setForm({ ...form, notes: e.target.value })}
-            />
-            <div className="form-actions">
-              <button type="submit" className="btn-primary">Book Service</button>
+
+          {/* Weakness 4 fix: if serviceId/providerId are pre-filled from the
+              Services page "Book" button, show them as read-only confirmation.
+              If the user navigated directly, guide them to the Services page. */}
+          {form.serviceId && form.providerId ? (
+            <form onSubmit={handleCreate} className="form-grid">
+              {/* Read-only confirmation — no raw ID inputs shown to real users */}
+              <div className="prefill-info">
+                <span>📋 <strong>Service #{form.serviceId}</strong> — booked from the Services page</span>
+              </div>
+              <input
+                id="booking-date"
+                type="date"
+                value={form.scheduledDate}
+                onChange={e => setForm({ ...form, scheduledDate: e.target.value })}
+              />
+              <textarea
+                id="booking-notes"
+                placeholder="Notes (optional)"
+                value={form.notes}
+                onChange={e => setForm({ ...form, notes: e.target.value })}
+              />
+              <div className="form-actions">
+                <button type="submit" className="btn-primary">Confirm Booking</button>
+              </div>
+            </form>
+          ) : (
+            // No service selected — direct navigation without clicking "Book"
+            <div className="info-panel">
+              <p>
+                🔍 To book a service, go to the{' '}
+                <button
+                  className="link-btn"
+                  onClick={() => navigate('/services')}
+                >
+                  Services page
+                </button>
+                {' '}and click the <strong>Book</strong> button on any listing.
+              </p>
             </div>
-          </form>
+          )}
         </section>
       )}
 
@@ -155,18 +167,18 @@ export default function BookingsPage() {
                 <p className="card-meta-small">Created: {new Date(b.createdAt).toLocaleDateString()}</p>
               </div>
               <div className="card-footer">
-                {/* Providers can approve/reject/complete */}
-                {(isProvider || isAdmin) && b.status === 'Pending' && (
+                {/* Providers can confirm/cancel/complete — values must match DB */}
+                {(isProvider || isAdmin) && b.status === 'pending' && (
                   <>
-                    <button className="btn-approve" onClick={() => handleStatus(b.id, 'Approved')}>Approve</button>
-                    <button className="danger" onClick={() => handleStatus(b.id, 'Rejected')}>Reject</button>
+                    <button className="btn-approve" onClick={() => handleStatus(b.id, 'confirmed')}>Approve</button>
+                    <button className="danger" onClick={() => handleStatus(b.id, 'cancelled')}>Reject</button>
                   </>
                 )}
-                {(isProvider || isAdmin) && b.status === 'Approved' && (
-                  <button className="btn-approve" onClick={() => handleStatus(b.id, 'Completed')}>Mark Complete</button>
+                {(isProvider || isAdmin) && b.status === 'confirmed' && (
+                  <button className="btn-approve" onClick={() => handleStatus(b.id, 'completed')}>Mark Complete</button>
                 )}
-                {/* Anyone can delete their own booking if Pending */}
-                {(b.status === 'Pending' || isAdmin) && (
+                {/* Anyone can cancel their own booking while it is still pending */}
+                {(b.status === 'pending' || isAdmin) && (
                   <button className="danger" onClick={() => handleDelete(b.id)}>Cancel</button>
                 )}
               </div>

@@ -1,8 +1,17 @@
-const { createBookingRepository } = require('../repositories/BookingRepository');
-const BookingService              = require('../services/BookingService');
+/**
+ * bookingController.js
+ *
+ * Handles all /api/bookings routes.
+ *
+ * Improvement (Weakness 2 — Dependency Injection):
+ *   bookingService is now imported from container.js instead of being
+ *   instantiated here. The controller has zero wiring code.
+ *
+ * Improvement (Weakness 7 — NotificationService connected):
+ *   notificationService is called after create and status-update operations.
+ */
 
-const repo           = createBookingRepository();
-const bookingService = new BookingService(repo);
+const { bookingService, notificationService } = require('../container');
 
 /**
  * GET /api/bookings
@@ -13,9 +22,9 @@ exports.getBookings = async (req, res) => {
     const { userId, providerId } = req.query;
     let data;
 
-    if (userId)     data = await bookingService.getBookingsByUser(userId);
+    if (userId)          data = await bookingService.getBookingsByUser(userId);
     else if (providerId) data = await bookingService.getBookingsByProvider(providerId);
-    else            data = await bookingService.getAllBookings();
+    else                 data = await bookingService.getAllBookings();
 
     res.json(data);
   } catch (err) {
@@ -43,6 +52,8 @@ exports.getBookingById = async (req, res) => {
 exports.createBooking = async (req, res) => {
   try {
     const created = await bookingService.createBooking(req.body);
+    // Notify after successful booking creation (Weakness 7 fix)
+    notificationService.notifyBookingCreated(created);
     res.status(201).json(created);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -56,6 +67,8 @@ exports.createBooking = async (req, res) => {
 exports.updateBookingStatus = async (req, res) => {
   try {
     const updated = await bookingService.updateStatus(Number(req.params.id), req.body.status);
+    // Notify after status change (Weakness 7 fix)
+    notificationService.notifyBookingStatusChanged(updated);
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });

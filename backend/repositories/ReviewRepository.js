@@ -38,9 +38,14 @@ function toDbRow(entity) {
 
 // ── DB-backed repository ─────────────────────────────────────────────────────
 
+// Valid snake_case columns that may appear in UPDATE SET clauses (Weakness 6 fix)
+const REVIEW_ALLOWED_COLS = new Set([
+  'user_id', 'provider_id', 'booking_id', 'rating', 'comment',
+]);
+
 class ReviewDatabaseRepository extends DatabaseRepository {
   constructor() {
-    super('reviews', mapRow, INSERT_COLS, toDbRow);
+    super('reviews', mapRow, INSERT_COLS, toDbRow, REVIEW_ALLOWED_COLS);
   }
 
   async getByProviderId(providerId) {

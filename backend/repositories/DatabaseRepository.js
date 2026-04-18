@@ -7,28 +7,33 @@
  *
  * All methods are async and return Promises.
  * Controllers must use `await` when calling service/repository methods.
+ *
+ * Improvement (Weakness 6 — Column Whitelist in update()):
+ *   Each concrete subclass must set this._allowedCols (a Set of valid
+ *   snake_case column names). The update() method filters out any key
+ *   not in that Set before building the SQL query. This prevents
+ *   unvalidated column names from reaching the SQL layer.
  */
 
 const { query } = require('../config/db');
 const IRepository = require('./IRepository');
 
-/**
- * Convert a snake_case DB row object into whatever the model expects.
- * Each concrete repository can override `_mapRow(row)` if the mapping differs.
- */
 class DatabaseRepository extends IRepository {
   /**
-   * @param {string} tableName - Exact PostgreSQL table name (e.g. 'services').
-   * @param {Function} mapRow - Optional function(row) → plain object. Defaults to identity.
-   * @param {string[]} insertColumns - Ordered list of JS field names used for INSERT.
-   * @param {Function} toDbRow - Function(entity) → array of values matching insertColumns.
+   * @param {string}   tableName     - Exact PostgreSQL table name (e.g. 'services').
+   * @param {Function} mapRow        - Optional function(row) → plain object. Defaults to identity.
+   * @param {string[]} insertColumns - Ordered list of SQL column names used for INSERT.
+   * @param {Function} toDbRow       - Function(entity) → array of values matching insertColumns.
+   * @param {Set}      allowedCols   - Set of snake_case column names allowed in UPDATE (Weakness 6 fix).
    */
-  constructor(tableName, mapRow, insertColumns = [], toDbRow = null) {
+  constructor(tableName, mapRow, insertColumns = [], toDbRow = null, allowedCols = new Set()) {
     super();
     this.tableName     = tableName;
     this._mapRow       = mapRow       || (row => row);
     this._insertCols   = insertColumns;
     this._toDbRow      = toDbRow      || (() => { throw new Error('toDbRow not implemented'); });
+    // Whitelist of column names permitted in UPDATE SET clauses (Weakness 6 fix)
+    this._allowedCols  = allowedCols;
 
     console.log(`[DatabaseRepository] Using table "${this.tableName}" (PostgreSQL).`);
   }
@@ -87,11 +92,29 @@ class DatabaseRepository extends IRepository {
 
   /**
    * UPDATE table SET col=$1, ... WHERE id=$N RETURNING *
-   * Only updates fields that are present in updatedData.
+   *
+   * Weakness 6 fix — Column Whitelist:
+   *   Only keys present in this._allowedCols are included in the SET clause.
+   *   Any unknown key is silently dropped and a warning is logged.
+   *   This prevents unvalidated column names from appearing in SQL,
+   *   which would be a SQL injection risk since column names cannot
+   *   be parameterised the same way values can.
    */
   async update(id, updatedData) {
-    // Build SET clause dynamically: col1=$1, col2=$2, ...
-    const entries = Object.entries(updatedData);
+    let entries = Object.entries(updatedData);
+
+    // Filter against the whitelist if one is defined
+    if (this._allowedCols.size > 0) {
+      const rejected = entries.filter(([col]) => !this._allowedCols.has(col));
+      if (rejected.length > 0) {
+        console.warn(
+          `[DatabaseRepository:${this.tableName}] update() rejected unknown columns: ` +
+          rejected.map(([c]) => c).join(', ')
+        );
+      }
+      entries = entries.filter(([col]) => this._allowedCols.has(col));
+    }
+
     if (entries.length === 0) return this.getById(id);
 
     const setClauses = entries.map(([col], i) => `${col} = $${i + 1}`).join(', ');

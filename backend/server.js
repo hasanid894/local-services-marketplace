@@ -5,7 +5,9 @@ const app         = require('./app');
 const errorHandler = require('./middleware/errorHandler');
 
 // Routes
-app.use('/api/auth',     require('./routes/authRoutes'));
+// Rate limiter applied to auth endpoints to prevent brute-force attacks (Weakness 5 fix)
+const authLimiter = app.get('authLimiter');
+app.use('/api/auth',     authLimiter, require('./routes/authRoutes'));
 app.use('/api/users',    require('./routes/userRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));

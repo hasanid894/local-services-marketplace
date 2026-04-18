@@ -1,15 +1,21 @@
-const { createUserRepository } = require('../repositories/UserRepository');
-const UserService              = require('../services/UserService');
+/**
+ * userController.js
+ *
+ * Handles all /api/users routes.
+ *
+ * Improvement (Weakness 2 — Dependency Injection):
+ *   userService is now imported from container.js instead of being
+ *   instantiated here. The controller has zero wiring code.
+ */
 
-const repo    = createUserRepository();
-const service = new UserService(repo);
+const { userService } = require('../container');
 
 /**
  * GET /api/users
  */
 exports.getUsers = async (req, res) => {
   try {
-    const users = await service.getAllUsers();
+    const users = await userService.getAllUsers();
     // Strip password hashes before responding
     res.json(users.map(({ passwordHash: _omit, ...u }) => u));
   } catch (err) {
@@ -22,7 +28,7 @@ exports.getUsers = async (req, res) => {
  */
 exports.getUser = async (req, res) => {
   try {
-    const user = await service.getUserById(Number(req.params.id));
+    const user = await userService.getUserById(Number(req.params.id));
     if (!user) return res.status(404).json({ error: 'User not found.' });
     const { passwordHash: _omit, ...safeUser } = user;
     res.json(safeUser);
@@ -36,7 +42,7 @@ exports.getUser = async (req, res) => {
  */
 exports.createUser = async (req, res) => {
   try {
-    const user = await service.createUser(req.body);
+    const user = await userService.createUser(req.body);
     const { passwordHash: _omit, ...safeUser } = user;
     res.status(201).json(safeUser);
   } catch (err) {
@@ -49,7 +55,7 @@ exports.createUser = async (req, res) => {
  */
 exports.updateUser = async (req, res) => {
   try {
-    const updated = await service.updateUser(Number(req.params.id), req.body);
+    const updated = await userService.updateUser(Number(req.params.id), req.body);
     if (!updated) return res.status(404).json({ error: 'User not found.' });
     const { passwordHash: _omit, ...safeUser } = updated;
     res.json(safeUser);
@@ -63,7 +69,7 @@ exports.updateUser = async (req, res) => {
  */
 exports.deleteUser = async (req, res) => {
   try {
-    const result = await service.deleteUser(Number(req.params.id));
+    const result = await userService.deleteUser(Number(req.params.id));
     res.json(result);
   } catch (err) {
     res.status(404).json({ error: err.message });

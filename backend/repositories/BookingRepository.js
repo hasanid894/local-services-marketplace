@@ -41,9 +41,15 @@ function toDbRow(entity) {
 
 // ── DB-backed repository ─────────────────────────────────────────────────────
 
+// Valid snake_case columns that may appear in UPDATE SET clauses (Weakness 6 fix)
+const BOOKING_ALLOWED_COLS = new Set([
+  'user_id', 'service_id', 'provider_id',
+  'scheduled_date', 'status', 'total_price',
+]);
+
 class BookingDatabaseRepository extends DatabaseRepository {
   constructor() {
-    super('bookings', mapRow, INSERT_COLS, toDbRow);
+    super('bookings', mapRow, INSERT_COLS, toDbRow, BOOKING_ALLOWED_COLS);
   }
 
   async getByUserId(userId) {

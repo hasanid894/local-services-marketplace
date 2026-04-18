@@ -1,12 +1,21 @@
 /**
- * NotificationService — Shërbimi i njoftimeve.
+ * NotificationService — In-process notification stub.
  *
- * SOLID: Single Responsibility Principle (SRP)
- * Merret VETËM me gjenerimin dhe dërgimin e njoftimeve.
+ * Current implementation: logs events to the console via _log().
+ * This is intentional for the development and demo phase.
  *
- * Aktualisht lëshon njoftime në console (in-process).
- * Mund të zëvendësohet me email (nodemailer), SMS, ose push notifications
- * pa ndryshuar asnjë pjesë tjetër të aplikacionit (OCP).
+ * To upgrade to real notifications in production:
+ *   - Email: replace _log() with nodemailer.sendMail()
+ *   - SMS:   replace _log() with Twilio / AWS SNS send
+ *   - Push:  replace _log() with Firebase Cloud Messaging
+ *
+ * This class follows OCP (Open/Closed Principle) — the public interface
+ * (notifyBookingCreated, notifyBookingStatusChanged, etc.) never changes;
+ * only _log() is replaced when adding a real transport.
+ *
+ * Weakness 7 fix: This service is now imported and used in the container.
+ * authController calls notifyUserRegistered() after registration.
+ * bookingController calls notifyBookingCreated() and notifyBookingStatusChanged().
  */
 class NotificationService {
   /**

@@ -1,10 +1,18 @@
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+/**
+ * authController.js
+ *
+ * Handles POST /api/auth/register and POST /api/auth/login.
+ *
+ * Improvement (Weakness 2 — Dependency Injection):
+ *   authService is now imported from container.js instead of being
+ *   instantiated here. The controller has zero wiring code.
+ *
+ * Improvement (Weakness 7 — NotificationService connected):
+ *   notificationService.notifyUserRegistered() is called after a
+ *   successful registration so the service is no longer dead code.
+ */
 
-const { createUserRepository } = require('../repositories/UserRepository');
-const AuthService              = require('../services/AuthService');
-
-const userRepo   = createUserRepository();
-const authService = new AuthService(userRepo);
+const { authService, notificationService } = require('../container');
 
 /**
  * POST /api/auth/register
@@ -12,6 +20,8 @@ const authService = new AuthService(userRepo);
 exports.register = async (req, res) => {
   try {
     const result = await authService.register(req.body);
+    // Notify after successful registration (Weakness 7 fix)
+    notificationService.notifyUserRegistered(result.user);
     res.status(201).json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });

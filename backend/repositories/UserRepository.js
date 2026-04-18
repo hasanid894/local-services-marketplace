@@ -46,9 +46,15 @@ function toDbRow(entity) {
 
 // ── DB-backed repository ─────────────────────────────────────────────────────
 
+// Valid snake_case columns that may appear in UPDATE SET clauses (Weakness 6 fix)
+const USER_ALLOWED_COLS = new Set([
+  'name', 'email', 'password_hash', 'role',
+  'location', 'latitude', 'longitude', 'is_verified',
+]);
+
 class UserDatabaseRepository extends DatabaseRepository {
   constructor() {
-    super('users', mapRow, INSERT_COLS, toDbRow);
+    super('users', mapRow, INSERT_COLS, toDbRow, USER_ALLOWED_COLS);
   }
 
   /** Efficient single-row lookup by email — used by AuthService. */

@@ -2,31 +2,49 @@
  * serviceService.test.js
  *
  * Tests for ServiceService — the business logic layer.
- * Uses an in-memory stub repository (no real file I/O) so tests are fast
- * and isolated. The same tests can be run against DatabaseRepository to
- * verify contract compatibility (repository swapping test).
+ * Uses an in-memory stub repository (no real file I/O or DB connection)
+ * so tests are fast and entirely isolated.
+ *
+ * METHOD NAMES MUST MATCH THE REAL ServiceService API:
+ *   createService()    — was incorrectly called add()
+ *   getAllServices()   — was incorrectly called list()
+ *   getServiceById()   — was incorrectly called findById()
+ *   updateService()    — correct
+ *   deleteService()    — correct
  */
 
 const ServiceService = require('../services/ServiceService');
-const DatabaseRepository = require('../repositories/DatabaseRepository');
 
-// ─── In-memory stub that mimics FileRepository / DatabaseRepository ──────────
+// ─── In-memory stub that satisfies IRepository ───────────────────────────────
+// All methods return Promises to match the real async repositories.
 class InMemoryRepository {
   constructor() {
     this._data = [];
     this._counter = 1;
   }
-  getAll()          { return [...this._data]; }
-  getById(id)       { return this._data.find(e => e.id === Number(id)) || null; }
-  add(entity)       { entity.id = this._counter++; this._data.push({ ...entity }); return entity; }
-  save()            { /* no-op */ }
-  delete(id) {
+
+  async getAll() { return [...this._data]; }
+
+  async getById(id) {
+    return this._data.find(e => e.id === Number(id)) || null;
+  }
+
+  async add(entity) {
+    const record = { ...entity, id: this._counter++ };
+    this._data.push(record);
+    return { ...record };
+  }
+
+  async save() { /* no-op — CSV compatibility shim */ }
+
+  async delete(id) {
     const i = this._data.findIndex(e => e.id === Number(id));
     if (i === -1) return false;
     this._data.splice(i, 1);
     return true;
   }
-  update(id, data) {
+
+  async update(id, data) {
     const i = this._data.findIndex(e => e.id === Number(id));
     if (i === -1) return null;
     Object.assign(this._data[i], data);
@@ -34,154 +52,173 @@ class InMemoryRepository {
   }
 }
 
-// ─── Helper: build a fresh service instance for each test ───────────────────
+// ─── Factory: fresh service + repository for every test ─────────────────────
 function makeService() {
   return new ServiceService(new InMemoryRepository());
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 1 — add() — normal case
+// 1 — createService() — happy path
 // ═══════════════════════════════════════════════════════════════════════════════
-test('add() with valid data returns a service object with an id', () => {
+test('createService() with valid data returns a service object with an id', async () => {
   const svc = makeService();
-  const result = svc.add({
+  const result = await svc.createService({
     providerId: 1,
+    categoryId: 2,
     title: 'Plumbing Fix',
     description: 'Fix leaks',
-    category: 'Plumbing',
     location: 'Pristina',
-    price: 20
+    price: 20,
   });
 
   expect(result).toBeDefined();
   expect(result.id).toBe(1);
   expect(result.title).toBe('Plumbing Fix');
   expect(result.price).toBe(20);
-  expect(result.status).toBe('active');
+  // isActive defaults to true
+  expect(result.isActive).toBe(true);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 2 — add() — border case: empty title
+// 2 — createService() — empty title is rejected
 // ═══════════════════════════════════════════════════════════════════════════════
-test('add() with empty title throws "Name cannot be empty"', () => {
+test('createService() with empty title throws "Title cannot be empty"', async () => {
   const svc = makeService();
-  expect(() =>
-    svc.add({ providerId: 1, title: '   ', price: 10 })
-  ).toThrow('Name cannot be empty.');
+  await expect(
+    svc.createService({ providerId: 1, categoryId: 2, title: '   ', price: 10 })
+  ).rejects.toThrow('Title cannot be empty.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 3 — add() — border case: price <= 0
+// 3 — createService() — price = 0 is rejected
 // ═══════════════════════════════════════════════════════════════════════════════
-test('add() with price = 0 throws "Price must be greater than 0"', () => {
+test('createService() with price = 0 throws "Price must be greater than 0"', async () => {
   const svc = makeService();
-  expect(() =>
-    svc.add({ providerId: 1, title: 'Valid Title', price: 0 })
-  ).toThrow('Price must be greater than 0.');
-});
-
-test('add() with negative price throws an error', () => {
-  const svc = makeService();
-  expect(() =>
-    svc.add({ providerId: 1, title: 'Valid Title', price: -5 })
-  ).toThrow('Price must be greater than 0.');
+  await expect(
+    svc.createService({ providerId: 1, categoryId: 2, title: 'Valid Title', price: 0 })
+  ).rejects.toThrow('Price must be greater than 0.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 4 — add() — border case: non-numeric price string ("abc")
+// 4 — createService() — negative price is rejected
 // ═══════════════════════════════════════════════════════════════════════════════
-test('add() with non-numeric price shows "Please enter a valid number"', () => {
+test('createService() with negative price throws "Price must be greater than 0"', async () => {
   const svc = makeService();
-  expect(() =>
-    svc.add({ providerId: 1, title: 'Valid Title', price: 'abc' })
-  ).toThrow('Please enter a valid number for price.');
+  await expect(
+    svc.createService({ providerId: 1, categoryId: 2, title: 'Valid Title', price: -5 })
+  ).rejects.toThrow('Price must be greater than 0.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 5 — list() — filter by category (case-insensitive)
+// 5 — createService() — non-numeric price string is rejected
 // ═══════════════════════════════════════════════════════════════════════════════
-test('list() filters by category case-insensitively', () => {
+test('createService() with non-numeric price throws "valid number" error', async () => {
   const svc = makeService();
-  svc.add({ providerId: 1, title: 'Math Tutoring',  category: 'Education', location: 'Peja',     price: 15 });
-  svc.add({ providerId: 2, title: 'Plumbing Fix',   category: 'Plumbing',  location: 'Pristina', price: 20 });
-  svc.add({ providerId: 3, title: 'English Lessons', category: 'education', location: 'Prizren', price: 18 });
-
-  const result = svc.list({ category: 'EDUCATION' });
-  expect(result).toHaveLength(2);
-  expect(result.every(s => s.category.toLowerCase() === 'education')).toBe(true);
+  await expect(
+    svc.createService({ providerId: 1, categoryId: 2, title: 'Valid Title', price: 'abc' })
+  ).rejects.toThrow('Please enter a valid number for price.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 6 — updateService() — non-existent id returns error
+// 6 — createService() — missing categoryId is rejected
 // ═══════════════════════════════════════════════════════════════════════════════
-test('updateService() with non-existent id throws "Item not found"', () => {
+test('createService() without categoryId throws "Category is required"', async () => {
   const svc = makeService();
-  expect(() =>
-    svc.updateService(999, { title: 'Ghost Service' })
-  ).toThrow(/not found/i);
+  await expect(
+    svc.createService({ providerId: 1, title: 'Valid Title', price: 20 })
+  ).rejects.toThrow('Category is required.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 7 — deleteService() — non-existent id returns error
+// 7 — getAllServices() — returns all services
 // ═══════════════════════════════════════════════════════════════════════════════
-test('deleteService() with non-existent id throws "Item not found"', () => {
+test('getAllServices() returns all created services', async () => {
   const svc = makeService();
-  expect(() =>
-    svc.deleteService(999)
-  ).toThrow(/not found/i);
+  await svc.createService({ providerId: 1, categoryId: 1, title: 'Math Tutoring', location: 'Peja', price: 15 });
+  await svc.createService({ providerId: 2, categoryId: 2, title: 'Plumbing Fix', location: 'Pristina', price: 20 });
+
+  const results = await svc.getAllServices();
+  expect(results).toHaveLength(2);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 8 — findById() — existing vs non-existing
+// 8 — getServiceById() — returns correct service
 // ═══════════════════════════════════════════════════════════════════════════════
-test('findById() returns service when it exists', () => {
+test('getServiceById() returns the service when it exists', async () => {
   const svc = makeService();
-  const created = svc.add({ providerId: 1, title: 'House Cleaning', category: 'Cleaning', location: 'Prizren', price: 25 });
-  const found = svc.findById(created.id);
+  const created = await svc.createService({
+    providerId: 1, categoryId: 3, title: 'House Cleaning', location: 'Prizren', price: 25,
+  });
+
+  const found = await svc.getServiceById(created.id);
   expect(found).not.toBeNull();
   expect(found.title).toBe('House Cleaning');
 });
 
-test('findById() returns null when id does not exist', () => {
+// ═══════════════════════════════════════════════════════════════════════════════
+// 9 — getServiceById() — returns null for non-existent id
+// ═══════════════════════════════════════════════════════════════════════════════
+test('getServiceById() returns null when id does not exist', async () => {
   const svc = makeService();
-  const result = svc.findById(999);
-  expect(result).toBeNull();
-});
-
-test('findById() returns null for non-numeric id (no crash)', () => {
-  const svc = makeService();
-  const result = svc.findById('abc');
+  const result = await svc.getServiceById(999);
   expect(result).toBeNull();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 9 — Repository swapping: DatabaseRepository passes the same contract
+// 10 — getServiceById() — returns null for a non-numeric id (no crash)
 // ═══════════════════════════════════════════════════════════════════════════════
-test('ServiceService works identically when given DatabaseRepository', () => {
-  // Swap the repository — ServiceService does NOT need to change at all
-  const dbRepo = new DatabaseRepository('services');
-  const svc = new ServiceService(dbRepo);
+test('getServiceById() returns null for a non-numeric id without throwing', async () => {
+  const svc = makeService();
+  const result = await svc.getServiceById('abc');
+  expect(result).toBeNull();
+});
 
-  const created = svc.add({
-    providerId: 1,
-    title: 'Electrical Repair',
-    category: 'Electrical',
-    location: 'Gjakova',
-    price: 30
+// ═══════════════════════════════════════════════════════════════════════════════
+// 11 — updateService() — non-existent id throws "not found"
+// ═══════════════════════════════════════════════════════════════════════════════
+test('updateService() with non-existent id throws "Item not found"', async () => {
+  const svc = makeService();
+  await expect(
+    svc.updateService(999, { title: 'Ghost Service' })
+  ).rejects.toThrow(/not found/i);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 12 — updateService() — invalid price in update is rejected
+// ═══════════════════════════════════════════════════════════════════════════════
+test('updateService() rejects a price update of 0', async () => {
+  const svc = makeService();
+  const created = await svc.createService({
+    providerId: 1, categoryId: 1, title: 'Service', price: 10,
+  });
+  await expect(
+    svc.updateService(created.id, { price: 0 })
+  ).rejects.toThrow('Price must be greater than 0.');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 13 — deleteService() — non-existent id throws "not found"
+// ═══════════════════════════════════════════════════════════════════════════════
+test('deleteService() with non-existent id throws "Item not found"', async () => {
+  const svc = makeService();
+  await expect(
+    svc.deleteService(999)
+  ).rejects.toThrow(/not found/i);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 14 — deleteService() — deletes an existing service and returns message
+// ═══════════════════════════════════════════════════════════════════════════════
+test('deleteService() removes an existing service and returns success message', async () => {
+  const svc = makeService();
+  const created = await svc.createService({
+    providerId: 1, categoryId: 1, title: 'To Be Deleted', price: 10,
   });
 
-  expect(created.id).toBeDefined();
-  expect(created.title).toBe('Electrical Repair');
+  const result = await svc.deleteService(created.id);
+  expect(result.message).toMatch(/deleted/i);
 
-  const found = svc.findById(created.id);
-  expect(found).not.toBeNull();
-  expect(found.price).toBe(30);
-
-  const updated = svc.updateService(created.id, { price: 35 });
-  expect(updated.price).toBe(35);
-
-  const deleted = svc.deleteService(created.id);
-  expect(deleted.message).toMatch(/deleted/i);
-
-  expect(svc.findById(created.id)).toBeNull();
+  // Confirm it is no longer retrievable
+  const found = await svc.getServiceById(created.id);
+  expect(found).toBeNull();
 });

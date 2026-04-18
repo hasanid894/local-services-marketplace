@@ -1,8 +1,14 @@
-const { createReviewRepository } = require('../repositories/ReviewRepository');
-const ReviewService              = require('../services/ReviewService');
+/**
+ * reviewController.js
+ *
+ * Handles all /api/reviews routes.
+ *
+ * Improvement (Weakness 2 — Dependency Injection):
+ *   reviewService is now imported from container.js instead of being
+ *   instantiated here. The controller has zero wiring code.
+ */
 
-const repo          = createReviewRepository();
-const reviewService = new ReviewService(repo);
+const { reviewService } = require('../container');
 
 /**
  * GET /api/reviews
