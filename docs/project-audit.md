@@ -1,8 +1,8 @@
 # Auditimi i Projektit — Local Services Marketplace
 
-**Autori:** Devlete Hasani  
+**Autore:** Devlete Hasani  
 **Data:** 15 Prill 2026  
-**Detyrë Kursi:** Project Audit & Improvement Sprint (Pjesa 1)
+** Project Audit & Improvement Sprint (Pjesa 1)
 
 ---
 
@@ -177,3 +177,6 @@ Ajo që nuk e kuptoj plotësisht është *pse* rrugët kanë nevojë për një o
 E kuptoj qëllimin (të ruajë një formë konsistente të `req.user` në të gjitha rrugët), por nuk jam e sigurt nëse ka kod tjetër diku që varet nga ky sjellje dhe që nuk e kam gjetur, apo nëse është thjesht një konventë mbrojtëse. Kuptimi i kompozimit të middleware — kur middleware-i është vërtet i nevojshëm kundrejt atij mbrojtës — është diçka që dua ta hetoj më thellë.
 
 
+## 6. Përfundim
+
+Ky auditim identifikon disa dobësi strukturore, të UI-së dhe të sigurisë që ndikojnë drejtpërdrejt në mirëmbajtjen dhe besueshmërinë e sistemit. Përmirësimet e propozuara fokusohen në stabilitet, konsistencë dhe përdorshmëri, duke krijuar një bazë më të fortë për zhvillim të mëtejshëm në fazën e ardhshme (Improvement Sprint).
