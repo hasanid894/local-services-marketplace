@@ -37,8 +37,8 @@ export default function ProviderDashboard() {
   }, [user, token]);
 
   const stats = useMemo(() => {
-    const pending = bookings.filter((b) => b.status === 'Pending').length;
-    const needAction = bookings.filter((b) => b.status === 'Pending' || b.status === 'Approved').length;
+    const pending    = bookings.filter((b) => b.status === 'pending').length;
+    const needAction = bookings.filter((b) => b.status === 'pending' || b.status === 'confirmed').length;
     const avg =
       reviews.length === 0
         ? null
@@ -49,7 +49,7 @@ export default function ProviderDashboard() {
   const inbox = useMemo(
     () =>
       [...bookings]
-        .filter((b) => b.status === 'Pending' || b.status === 'Approved')
+        .filter((b) => b.status === 'pending' || b.status === 'confirmed')
         .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
         .slice(0, 5),
     [bookings]

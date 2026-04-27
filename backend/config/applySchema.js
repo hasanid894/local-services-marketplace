@@ -5,17 +5,9 @@
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
-const { Pool } = require('pg');
 const fs       = require('fs');
 const path     = require('path');
-
-const pool = new Pool({
-  host:     process.env.DB_HOST     || 'localhost',
-  port:     Number(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME     || 'postgres',
-  user:     process.env.DB_USER     || 'postgres',
-  password: String(process.env.DB_PASSWORD || ''),
-});
+const { pool } = require('./db');
 
 async function applySchema() {
   const schemaPath = path.join(__dirname, 'schema.sql');

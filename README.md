@@ -129,14 +129,20 @@ USE_DB=true
 
 2. **Apply the schema** (creates all tables, indexes, and foreign key constraints):
    ```bash
-   psql -U postgres -d local_services_marketplace -f backend/config/schema.sql
+   cd backend
+   npm run db:schema
    ```
 
 3. **Verify** the tables were created:
    ```bash
-   psql -U postgres -d local_services_marketplace -c "\dt"
+   npm run db:check
    ```
    You should see: `users`, `services`, `bookings`, `reviews`, `categories`, `payments`, and more.
+
+4. **Quick connection smoke test**:
+   ```bash
+   npm run db:test
+   ```
 
 ### 4.4 Running the Backend
 

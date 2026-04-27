@@ -6,7 +6,10 @@
   "scripts": {
     "test": "jest --verbose",
     "start": "node server.js",
-    "menu": "node ui/menu.js"
+    "menu": "node ui/menu.js",
+    "db:test": "node config/db.js",
+    "db:check": "node config/checkDb.js",
+    "db:schema": "node config/applySchema.js"
   },
   "keywords": [],
   "author": "",

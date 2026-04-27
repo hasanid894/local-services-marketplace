@@ -40,10 +40,10 @@ export default function CustomerDashboard() {
   }, [user, token]);
 
   const stats = useMemo(() => {
-    const pending = countByStatus(bookings, 'Pending');
-    const approved = countByStatus(bookings, 'Approved');
-    const done = countByStatus(bookings, 'Completed');
-    return { pending, approved, done, total: bookings.length };
+    const pending   = countByStatus(bookings, 'pending');
+    const confirmed = countByStatus(bookings, 'confirmed');
+    const done      = countByStatus(bookings, 'completed');
+    return { pending, confirmed, done, total: bookings.length };
   }, [bookings]);
 
   const recentBookings = useMemo(
@@ -82,8 +82,8 @@ export default function CustomerDashboard() {
           <div className="stat-grid">
             <StatCard
               label="Active bookings"
-              value={stats.pending + stats.approved}
-              hint="Pending + approved"
+              value={stats.pending + stats.confirmed}
+              hint="Pending + confirmed"
               icon={<IconCalendar />}
             />
             <StatCard

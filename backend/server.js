@@ -1,23 +1,23 @@
 // Load env vars FIRST — before any other require that might read process.env
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
-const app         = require('./app');
+const app = require('./app');
 const errorHandler = require('./middleware/errorHandler');
 
 // Routes
 // Rate limiter applied to auth endpoints to prevent brute-force attacks (Weakness 5 fix)
 const authLimiter = app.get('authLimiter');
-app.use('/api/auth',     authLimiter, require('./routes/authRoutes'));
-app.use('/api/users',    require('./routes/userRoutes'));
+app.use('/api/auth', authLimiter, require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
-app.use('/api/reviews',  require('./routes/reviewRoutes'));
+app.use('/api/reviews', require('./routes/reviewRoutes'));
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
 // ── Startup ────────────────────────────────────────────────────────────────
-const PORT   = process.env.PORT   || 5000;
+const PORT = process.env.PORT || 5000;
 const USE_DB = process.env.USE_DB === 'true';
 
 async function start() {

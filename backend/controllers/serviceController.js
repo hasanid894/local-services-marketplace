@@ -31,10 +31,10 @@ exports.getServices = async (req, res) => {
   try {
     const { categoryId, location, providerId, activeOnly } = req.query;
     const filter = {
-      categoryId:  categoryId  || undefined,
-      location:    location    || undefined,
-      providerId:  providerId  || undefined,
-      activeOnly:  activeOnly !== 'false', // default true
+      categoryId: categoryId || undefined,
+      location: location || undefined,
+      providerId: providerId || undefined,
+      activeOnly: activeOnly !== 'false', // default true
     };
     const services = await serviceService.getAllServices(filter);
     res.json(services);

@@ -27,12 +27,41 @@ export default function ReviewsPage() {
 
   const handleFilter = (e) => { e.preventDefault(); fetchReviews(); };
 
+  // ── User's own bookings (for the review form dropdown) ──────────────────────
+  const [myBookings, setMyBookings] = useState([]);
+  useEffect(() => {
+    if (!user || !token) return;
+    const role = user?.role?.toLowerCase();
+    // Only customers write reviews; providers don't see the form
+    if (role === 'provider') return;
+    const params = `userId=${user.id}`;
+    api.getBookings(params, token).then(({ ok, data }) => {
+      if (ok && Array.isArray(data)) {
+        // Show all bookings so the user can review at any stage
+        setMyBookings(data);
+      }
+    });
+  }, [user, token]);
+
+  const handleBookingSelect = (e) => {
+    const bookingId = e.target.value;
+    if (!bookingId) {
+      setForm((f) => ({ ...f, bookingId: '', providerId: '' }));
+      return;
+    }
+    const booking = myBookings.find((b) => String(b.id) === bookingId);
+    setForm((f) => ({
+      ...f,
+      bookingId,
+      providerId: booking ? String(booking.providerId) : '',
+    }));
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setFormError(''); setSuccess('');
     if (!user) { navigate('/login'); return; }
-    if (!form.providerId) { setFormError('Provider ID is required.'); return; }
-    if (!form.bookingId) { setFormError('Booking ID is required.'); return; }
+    if (!form.bookingId) { setFormError('Please select a booking to review.'); return; }
     if (form.rating < 1 || form.rating > 5) { setFormError('Rating must be between 1 and 5.'); return; }
 
     const { ok, data } = await api.createReview(
@@ -93,20 +122,38 @@ export default function ReviewsPage() {
           <h2>Write a review</h2>
           {formError && <p className="error">{formError}</p>}
           <form onSubmit={handleCreate} className="form-grid">
-            <input
-              id="review-providerId"
-              placeholder="Provider ID *"
-              type="number"
-              value={form.providerId}
-              onChange={e => setForm({ ...form, providerId: e.target.value })}
-            />
-            <input
-              id="review-bookingId"
-              placeholder="Booking ID *"
-              type="number"
-              value={form.bookingId}
-              onChange={e => setForm({ ...form, bookingId: e.target.value })}
-            />
+
+            {/* Booking selector — no raw ID typing required */}
+            <div className="field">
+              <label htmlFor="review-booking">Select a booking to review</label>
+              {myBookings.length === 0 ? (
+                <p className="info-hint">
+                  💡 You need at least one booking to write a review.{' '}
+                  <button className="link-btn" type="button" onClick={() => navigate('/services')}>
+                    Browse services
+                  </button>
+                </p>
+              ) : (
+                <select
+                  id="review-booking"
+                  value={form.bookingId}
+                  onChange={handleBookingSelect}
+                >
+                  <option value="">— choose a booking —</option>
+                  {myBookings.map((b) => (
+                    <option key={b.id} value={String(b.id)}>
+                      Booking #{b.id} · Service #{b.serviceId} · {b.status}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {form.providerId && (
+                <p className="info-hint" style={{ marginTop: '0.4rem' }}>
+                  ✅ Provider auto-detected (ID #{form.providerId})
+                </p>
+              )}
+            </div>
+
             <div className="field">
               <label>Rating</label>
               <div className="star-picker">

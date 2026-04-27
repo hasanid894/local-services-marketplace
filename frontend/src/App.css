@@ -1159,10 +1159,38 @@ body {
   flex-shrink: 0;
 }
 
-.status-pill-pending { background: rgba(251, 191, 36, 0.2); color: #fcd34d; }
-.status-pill-approved { background: rgba(52, 211, 153, 0.18); color: #6ee7b7; }
-.status-pill-rejected { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
-.status-pill-completed { background: rgba(99, 102, 241, 0.22); color: #c4b5fd; }
+.status-pill-pending   { background: rgba(251, 191, 36, 0.2);   color: #fcd34d; }
+.status-pill-confirmed { background: rgba(52, 211, 153, 0.18);  color: #6ee7b7; }
+.status-pill-approved  { background: rgba(52, 211, 153, 0.18);  color: #6ee7b7; } /* legacy alias */
+.status-pill-cancelled { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
+.status-pill-rejected  { background: rgba(248, 113, 113, 0.18); color: #fca5a5; } /* legacy alias */
+.status-pill-completed { background: rgba(99, 102, 241, 0.22);  color: #c4b5fd; }
+
+/* ── Inline helper text (used in review booking-select) ── */
+.info-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ── Inline text-only button (looks like a link) ── */
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-btn:hover {
+  color: var(--accent-hover);
+  background: none;
+  border: none;
+}
 
 /* ── Generic page ── */
 .page {
