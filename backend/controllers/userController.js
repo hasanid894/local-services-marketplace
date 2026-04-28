@@ -9,6 +9,7 @@
  */
 
 const { userService } = require('../container');
+const { query }       = require('../config/db');
 
 /**
  * GET /api/users
@@ -18,6 +19,22 @@ exports.getUsers = async (req, res) => {
     const users = await userService.getAllUsers();
     // Strip password hashes before responding
     res.json(users.map(({ passwordHash: _omit, ...u }) => u));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * GET /api/users/providers  — public, no auth required
+ * Returns only { id, name } for every user with role = 'provider'.
+ * Used by the Reviews page filter dropdown.
+ */
+exports.getProviders = async (req, res) => {
+  try {
+    const res2 = await query(
+      "SELECT id, name FROM users WHERE role = 'provider' ORDER BY name"
+    );
+    res.json(res2.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

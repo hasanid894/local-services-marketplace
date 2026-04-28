@@ -22,7 +22,7 @@ Finding a reliable local professional in Kosovo is largely informal — people r
 - compare prices and read real customer reviews, or
 - book a provider and track the job through to completion.
 
-This project replaces that informal process with a structured digital marketplace where every interaction — from discovery to booking to review — is visible, statusdriven, and accountable.
+This project replaces that informal process with a structured digital marketplace where every interaction — from discovery to booking to review — is visible, status-driven, and accountable.
 
 ---
 
@@ -79,11 +79,11 @@ I replaced all Title Case status strings with their actual lowercase equivalents
 
 ## 6. What Still Needs Improvement
 
-### Review flow UX — linking reviews back to service names
+### Booking confirmation — no email or in-app notification
 
-Currently, the review list shows raw IDs (`User #3`, `Provider #2`, `Booking #5`). A meaningful review feed would display the provider's **name** and the **service title** instead.
+When a provider approves or rejects a booking, the customer currently has no way of knowing unless they manually refresh the Bookings page and check their status. The `NotificationService` exists in the backend and is wired into the DI container, but it does not yet send any real notification.
 
-This would require a JOIN or a secondary API call when loading reviews, which is technically straightforward but was not prioritized in the current sprint. Displaying human-readable context would make the Reviews page significantly more useful and professional.
+The fix would require either connecting `NotificationService` to an email provider (e.g. SendGrid or Nodemailer) or implementing a simple in-app notification badge that polls `GET /api/notifications` on the frontend. The data model already includes a `notifications` table in the database schema, so the persistence layer is ready — only the delivery mechanism is missing.
 
 ---
 
@@ -95,15 +95,58 @@ This would require a JOIN or a secondary API call when loading reviews, which is
 | **Live demo** | ~3 min | Walk through the full flow: Register → Login → Dashboard → Browse → Book → Track |
 | **Technical explanation** | ~1 min | Layered architecture (Routes → Controllers → Services → Repositories → DB), DI container, dual storage mode |
 | **Problem + solution** | ~1 min | The status case mismatch bug: what it was, where it hid, how I found and fixed it |
-| **Conclusion** | ~30 sec | What still needs improvement (review feed with real names), what I would tackle next |
-
-### Backup plan (in case something fails live)
-
-- **Backend offline:** Use the CSV file mode (`USE_DB=false`) — the app runs without PostgreSQL
-- **Database error:** Show the `README.md` setup section and the `docs/architecture.md` diagram
-- **Frontend crash:** Show pre-taken screenshots of each page stored in this `docs/` folder
-- **Booking flow breaks:** Demonstrate the Services page filter + the Bookings page list from a pre-seeded demo account
+| **Conclusion** | ~30 sec | What still needs improvement (booking notifications), what I would tackle next |
 
 ---
 
-*This document satisfies the requirements of Part 2 of the Demo Readiness Assignment.*
+## 8. Part 3 — Demo Readiness
+
+### 8.1 Presentation Flow (exact order)
+
+The following is the precise order I will follow during the live demo:
+
+| # | Action | What the audience sees |
+|---|---|---|
+| 1 | Open the app at `http://localhost:3000` | Home page — project name, hero section, call-to-action |
+| 2 | Click **Register** — fill in name, email, password, role = Customer | Registration form submits, JWT issued, redirect to Dashboard |
+| 3 | Show the **Customer Dashboard** | Stat cards (active bookings, completed, reviews), quick-action links |
+| 4 | Navigate to **Marketplace** (Services page) | Live service listings with category and location filter dropdowns |
+| 5 | Apply a category filter | List narrows in real time — demonstrates the filter feature |
+| 6 | Click **Book** on a listing | Booking page opens pre-filled — no manual ID entry required |
+| 7 | Select a date, click **Confirm Booking** | Success banner appears; booking saved with status `pending` |
+| 8 | Navigate to **Bookings** page | New booking card is visible with amber `pending` badge |
+| 9 | Log out → log in as the **Provider** account | Provider Dashboard appears — inbox shows the incoming request |
+| 10 | Go to **Bookings** → click **Approve** | Status updates to `confirmed` (green badge) immediately |
+| 11 | Log out → log back in as the **Customer** | Bookings page shows status now reads `confirmed` |
+| 12 | Navigate to **Reviews** | Show review cards with real reviewer names, provider names, and service titles (from JOIN query) |
+
+**Estimated time for this live demo segment: approximately 3 minutes** (out of the 5–7 minute total presentation outlined in Section 7).
+
+---
+
+### 8.2 Backup Plan (in case something fails live)
+
+| Failure scenario | Recovery action |
+|---|---|
+| **PostgreSQL is down** | Switch to CSV mode: set `USE_DB=false` in `backend/.env` and restart with `node server.js`. The full app runs without a database. |
+| **Backend fails to start** | Open `README.md` → Section 4 (Getting Started) and walk through the setup steps verbally. Show `docs/architecture.md` as a visual of the system design. |
+| **Frontend crashes or blank page** | Show pre-prepared screenshots of each page (Home, Services, Bookings, Dashboard, Reviews) stored locally. Narrate the flow using the screenshots. |
+| **Booking flow breaks mid-demo** | Fall back to the pre-seeded provider account which already has confirmed bookings. Show the Bookings list and status badges directly without creating a new booking live. |
+| **Login fails** | Use the pre-created demo accounts whose credentials are noted offline. If auth is broken entirely, show the JWT flow in `AuthService.js` and the auth middleware code directly. |
+
+---
+
+### 8.3 Practice Checklist
+
+Completed before the presentation:
+
+- [x] Ran the full demo flow (Register → Book → Approve → Confirm) end-to-end at least once
+- [x] Verified both customer and provider demo accounts exist and log in correctly
+- [x] Confirmed at least 3 service listings are visible on the Marketplace page
+- [x] Confirmed at least 1 review is visible with real names (not raw IDs)
+- [x] Tested the CSV fallback mode (`USE_DB=false`) — app runs without PostgreSQL
+- [x] Timed the live demo section — stays under 3 minutes
+- [x] Practiced the technical explanation of the layered architecture in one minute
+- [x] Practiced the bug explanation (status case mismatch) in one minute
+
+---

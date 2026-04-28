@@ -43,17 +43,52 @@ const REVIEW_ALLOWED_COLS = new Set([
   'user_id', 'provider_id', 'booking_id', 'rating', 'comment',
 ]);
 
+/** SQL fragment that JOINs users, provider user, and service title. */
+const ENRICHED_SELECT = `
+  SELECT
+    r.id,
+    r.user_id,
+    r.provider_id,
+    r.booking_id,
+    r.rating,
+    r.comment,
+    r.created_at,
+    u.name   AS user_name,
+    p.name   AS provider_name,
+    s.title  AS service_title
+  FROM reviews r
+  LEFT JOIN users    u ON u.id = r.user_id
+  LEFT JOIN users    p ON p.id = r.provider_id
+  LEFT JOIN bookings b ON b.id = r.booking_id
+  LEFT JOIN services s ON s.id = b.service_id
+`;
+
+function mapEnrichedRow(row) {
+  return {
+    ...mapRow(row),
+    userName:     row.user_name     || null,
+    providerName: row.provider_name || null,
+    serviceTitle: row.service_title || null,
+  };
+}
+
 class ReviewDatabaseRepository extends DatabaseRepository {
   constructor() {
     super('reviews', mapRow, INSERT_COLS, toDbRow, REVIEW_ALLOWED_COLS);
   }
 
+  /** Returns all reviews enriched with user/provider names and service title. */
+  async getAll() {
+    const res = await query(`${ENRICHED_SELECT} ORDER BY r.created_at DESC`);
+    return res.rows.map(mapEnrichedRow);
+  }
+
   async getByProviderId(providerId) {
     const res = await query(
-      'SELECT * FROM reviews WHERE provider_id = $1 ORDER BY created_at DESC',
+      `${ENRICHED_SELECT} WHERE r.provider_id = $1 ORDER BY r.created_at DESC`,
       [Number(providerId)]
     );
-    return res.rows.map(mapRow);
+    return res.rows.map(mapEnrichedRow);
   }
 
   /** SQL AVG for efficiency. */

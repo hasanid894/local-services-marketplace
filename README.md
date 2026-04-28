@@ -205,7 +205,7 @@ Authorization: Bearer <token>
 |---|---|---|---|
 | `GET` | `/api/bookings` | Yes | Get bookings (filtered by role automatically) |
 | `POST` | `/api/bookings` | Yes (customer) | Create a booking |
-| `PUT` | `/api/bookings/:id/status` | Yes (provider/admin) | Update booking status |
+| `PATCH` | `/api/bookings/:id/status` | Yes (provider/admin) | Update booking status |
 | `DELETE` | `/api/bookings/:id` | Yes | Cancel / delete a booking |
 
 **Valid booking statuses:** `pending` → `confirmed` → `completed` or `cancelled`
@@ -253,14 +253,19 @@ local-services-marketplace/
 │   ├── middleware/         # JWT auth, role guards, error handler
 │   ├── models/             # Plain data model definitions
 │   ├── tests/              # Jest unit tests (no real DB needed)
-│   ├── app.js              # Express app setup
+│   ├── container.js        # Dependency Injection container (wires repos → services)
+│   ├── app.js              # Express app setup (security headers, CORS, rate limiting)
 │   └── server.js           # Server entry point
 │
 ├── docs/
 │   ├── architecture.md
 │   ├── class-diagram.md
-│   ├── project-audit.md    # Part 1 — Project Audit
-│   └── improvement-report.md  # Part 2 — Improvement Sprint
+│   ├── project-audit.md       # Audit Report
+│   ├── improvement-report.md  # Improvement Sprint Report
+│   ├── implementation.md      # Implementation Notes
+│   ├── sprint-plan.md         # Sprint Plan
+│   ├── sprint-report.md       # Sprint Report
+│   └── demo-plan.md           # Demo Readiness Plan
 │
 ├── .gitignore
 └── README.md

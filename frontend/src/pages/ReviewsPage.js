@@ -11,21 +11,32 @@ export default function ReviewsPage() {
 
   const [reviews, setReviews] = useState([]);
   const [filterProviderId, setFilterProviderId] = useState('');
+  const [providers, setProviders] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState({ providerId: '', bookingId: '', rating: 5, comment: '' });
   const [formError, setFormError] = useState('');
 
-  const fetchReviews = async () => {
-    const params = filterProviderId.trim() ? `providerId=${filterProviderId.trim()}` : '';
+  const fetchReviews = async (pid = filterProviderId) => {
+    const params = pid ? `providerId=${pid}` : '';
     const { ok, data } = await api.getReviews(params);
     if (ok) setReviews(data);
     else setError(data?.error || 'Failed to load reviews.');
   };
 
-  useEffect(() => { fetchReviews(); }, []);
+  // Load providers for filter dropdown (public endpoint, no auth needed)
+  useEffect(() => {
+    api.getProviders().then(({ ok, data }) => {
+      if (ok && Array.isArray(data)) setProviders(data);
+    });
+    fetchReviews();
+  }, []);
 
-  const handleFilter = (e) => { e.preventDefault(); fetchReviews(); };
+  const handleProviderFilter = (e) => {
+    const pid = e.target.value;
+    setFilterProviderId(pid);
+    fetchReviews(pid);
+  };
 
   // ── User's own bookings (for the review form dropdown) ──────────────────────
   const [myBookings, setMyBookings] = useState([]);
@@ -104,16 +115,29 @@ export default function ReviewsPage() {
 
       {/* Filter */}
       <section className="panel">
-        <h2>Filter reviews</h2>
-        <form onSubmit={handleFilter} className="row">
-          <input
-            placeholder="Filter by Provider ID"
+        <h2>Filter by provider</h2>
+        <div className="row">
+          <select
+            id="filter-provider"
             value={filterProviderId}
-            onChange={e => setFilterProviderId(e.target.value)}
-          />
-          <button type="submit">Apply</button>
-          <button type="button" className="ghost" onClick={() => { setFilterProviderId(''); setTimeout(fetchReviews, 0); }}>Clear</button>
-        </form>
+            onChange={handleProviderFilter}
+            style={{ minWidth: '220px' }}
+          >
+            <option value="">— All providers —</option>
+            {providers.map(p => (
+              <option key={p.id} value={String(p.id)}>{p.name}</option>
+            ))}
+          </select>
+          {filterProviderId && (
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => handleProviderFilter({ target: { value: '' } })}
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </section>
 
       {/* Post Review Form — logged-in customers */}
@@ -142,14 +166,14 @@ export default function ReviewsPage() {
                   <option value="">— choose a booking —</option>
                   {myBookings.map((b) => (
                     <option key={b.id} value={String(b.id)}>
-                      Booking #{b.id} · Service #{b.serviceId} · {b.status}
+                      {b.serviceTitle || `Service #${b.serviceId}`} · {b.status}
                     </option>
                   ))}
                 </select>
               )}
               {form.providerId && (
                 <p className="info-hint" style={{ marginTop: '0.4rem' }}>
-                  ✅ Provider auto-detected (ID #{form.providerId})
+                  ✅ Provider auto-detected
                 </p>
               )}
             </div>
@@ -203,9 +227,9 @@ export default function ReviewsPage() {
                 </div>
                 <p className="review-comment">{r.comment || 'No comment.'}</p>
                 <div className="card-meta">
-                  <span>User #{r.userId}</span>
-                  <span>Provider #{r.providerId}</span>
-                  <span>Booking #{r.bookingId}</span>
+                  <span>👤 {r.userName || `User #${r.userId}`}</span>
+                  <span>🔧 {r.providerName || `Provider #${r.providerId}`}</span>
+                  {r.serviceTitle && <span>📋 {r.serviceTitle}</span>}
                 </div>
                 <p className="card-meta-small">{new Date(r.createdAt).toLocaleDateString()}</p>
               </div>

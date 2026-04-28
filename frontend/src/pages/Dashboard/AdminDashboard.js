@@ -25,7 +25,7 @@ export default function AdminDashboard() {
       setLoading(true);
       setError('');
       const [uRes, bRes, sRes, rRes] = await Promise.all([
-        api.getUsers(),
+        api.getUsers(token),
         api.getBookings('', token),
         api.getServices('', token),
         api.getReviews(),
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
             <StatCard
               label="Bookings"
               value={bookings.length}
-              hint={`Pending: ${bookingMix.Pending || 0}`}
+              hint={`Pending: ${bookingMix['pending'] || 0}`}
               icon={<IconCalendar />}
             />
             <StatCard

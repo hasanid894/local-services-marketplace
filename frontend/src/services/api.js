@@ -72,5 +72,6 @@ export const api = {
   }),
 
   // ── Users (admin / platform views) ───────────────────────────────────
-  getUsers: () => safeFetch(`${BASE}/users`),
+  getUsers:     (token) => safeFetch(`${BASE}/users`, { headers: { Authorization: `Bearer ${token}` } }),
+  getProviders: ()      => safeFetch(`${BASE}/users/providers`),
 };

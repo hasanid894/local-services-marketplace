@@ -52,20 +52,37 @@ class BookingDatabaseRepository extends DatabaseRepository {
     super('bookings', mapRow, INSERT_COLS, toDbRow, BOOKING_ALLOWED_COLS);
   }
 
-  async getByUserId(userId) {
-    const res = await query(
-      'SELECT * FROM bookings WHERE user_id = $1 ORDER BY created_at DESC',
-      [Number(userId)]
+  /** Enriched SELECT that joins services and provider user. */
+  _enrichedQuery(whereClause, params) {
+    return query(
+      `SELECT b.*,
+              s.title  AS service_title,
+              u.name   AS provider_name
+       FROM bookings b
+       LEFT JOIN services s ON s.id = b.service_id
+       LEFT JOIN users    u ON u.id = b.provider_id
+       ${whereClause}
+       ORDER BY b.created_at DESC`,
+      params
     );
-    return res.rows.map(mapRow);
+  }
+
+  _mapEnriched(row) {
+    return {
+      ...mapRow(row),
+      serviceTitle: row.service_title || null,
+      providerName: row.provider_name || null,
+    };
+  }
+
+  async getByUserId(userId) {
+    const res = await this._enrichedQuery('WHERE b.user_id = $1', [Number(userId)]);
+    return res.rows.map(r => this._mapEnriched(r));
   }
 
   async getByProviderId(providerId) {
-    const res = await query(
-      'SELECT * FROM bookings WHERE provider_id = $1 ORDER BY created_at DESC',
-      [Number(providerId)]
-    );
-    return res.rows.map(mapRow);
+    const res = await this._enrichedQuery('WHERE b.provider_id = $1', [Number(providerId)]);
+    return res.rows.map(r => this._mapEnriched(r));
   }
 
   async update(id, updatedData) {
