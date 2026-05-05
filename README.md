@@ -1,113 +1,112 @@
 # Local Services Marketplace
 
-A full-stack web platform that connects customers with local service providers in Kosovo — plumbers, electricians, tutors, cleaners, and more. Customers can browse services, create bookings, and leave reviews. Providers can manage their listings and respond to bookings. Admins have full platform oversight.
+Një platformë web full-stack që lidh klientët me ofruesit e shërbimeve lokale në Kosovë — hidraulikë, elektricistë, mësues, pastrues, dhe shumë të tjerë. Klientët mund të shfletojnë shërbimet, të krijojnë bookings dhe të lënë reviews. Ofruesit mund të menaxhojnë listat e tyre dhe të përgjigjen ndaj bookings. Adminët kanë mbikëqyrje të plotë të platformës.
 
 ---
 
-## Table of Contents
+## Tabela e Përmbajtjes
 
-1. [Project Description](#1-project-description)
+1. [Përshkrimi i Projektit](#1-përshkrimi-i-projektit)
 2. [Technology Stack](#2-technology-stack)
-3. [Architecture](#3-architecture)
-4. [Getting Started](#4-getting-started)
-   - [Prerequisites](#41-prerequisites)
+3. [Arkitektura](#3-arkitektura)
+4. [Fillimi i Punës](#4-fillimi-i-punës)
+   - [Kërkesat paraprake](#41-kërkesat-paraprake)
    - [Environment Variables](#42-environment-variables)
-   - [Database Setup](#43-database-setup)
-   - [Running the Backend](#44-running-the-backend)
-   - [Running the Frontend](#45-running-the-frontend)
-   - [Running Tests](#46-running-tests)
+   - [Konfigurimi i Bazës së të Dhënave](#43-konfigurimi-i-bazës-së-të-dhënave)
+   - [Ekzekutimi i Backend-it](#44-ekzekutimi-i-backend-it)
+   - [Ekzekutimi i Frontend-it](#45-ekzekutimi-i-frontend-it)
+   - [Ekzekutimi i Testeve](#46-ekzekutimi-i-testeve)
 5. [API Reference](#5-api-reference)
-6. [Project Structure](#6-project-structure)
-7. [Design Principles](#7-design-principles)
-8. [Author](#8-author)
+6. [Struktura e Projektit](#6-struktura-e-projektit)
+7. [Parimet e Dizajnit](#7-parimet-e-dizajnit)
+8. [Autori](#8-autori)
 
 ---
 
-## 1. Project Description
+## 1. Përshkrimi i Projektit
 
-**Local Services Marketplace** is a digital platform that increases transparency and reliability in the local services market.
+**Local Services Marketplace** është një platformë dixhitale që rrit transparencën dhe besueshmërinë në tregun e shërbimeve lokale.
 
-**Core features:**
-- Role-based access: **Customer**, **Provider**, **Admin**
-- JWT authentication with bcrypt password hashing
-- Full CRUD for service listings with category and location filtering
-- Booking lifecycle: `pending → confirmed → completed / cancelled`
-- Review and rating system
-- Dual persistence mode: PostgreSQL database (default) or CSV files
+**Funksionalitetet kryesore:**
+- Qasje e bazuar në role: **Customer**, **Provider**, **Admin**
+- Autentikim me JWT dhe enkriptim fjalëkalimesh me bcrypt
+- CRUD i plotë për listat e shërbimeve me filtrim sipas kategorisë dhe vendndodhjes
+- Cikli jetësor i booking-ut: `pending → confirmed → completed / cancelled`
+- Sistem reviews dhe vlerësimesh
+- Modalitet i dyfishtë ruajtjeje: bazë të dhënash PostgreSQL (default) ose skedarë CSV
 
 ---
 
 ## 2. Technology Stack
 
-| Layer | Technology |
+| Shtresa | Teknologjia |
 |---|---|
 | Frontend | React 18 |
 | Backend | Node.js + Express 5 |
-| Database | **PostgreSQL** (fully integrated) |
-| Authentication | JWT (jsonwebtoken) + bcrypt |
-| ORM / Query layer | `pg` (node-postgres) — raw parameterised queries |
-| Testing | Jest |
-| Version Control | Git + GitHub |
-| Documentation | Markdown |
+| Baza e të Dhënave | **PostgreSQL** (e integruar plotësisht) |
+| Autentikimi | JWT (jsonwebtoken) + bcrypt |
+| ORM / Query layer | `pg` (node-postgres) — parametrized queries direkte |
+| Testimi | Jest |
+| Kontrolli i Versioneve | Git + GitHub |
+| Dokumentacioni | Markdown |
 
 ---
 
-## 3. Architecture
+## 3. Arkitektura
 
-The backend uses a **Layered Architecture** with strict separation of concerns:
-
+Backend-i përdor një **Arkitekturë me Shtresa (Layered Architecture)** me ndarje strikte të përgjegjësive:
 ```
 Routes → Controllers → Services → Repositories → Database
 ```
 
-| Layer | Responsibility |
+| Shtresa | Përgjegjësia |
 |---|---|
-| **Routes** | Declare API endpoints and apply middleware |
-| **Controllers** | Parse HTTP requests, call service methods, send responses |
-| **Services** | Business logic and validation (no HTTP awareness) |
-| **Repositories** | Data access — all SQL lives here |
-| **Models** | Plain data objects (no logic) |
-| **Middleware** | JWT verification, role guards, error handling |
+| **Routes** | Deklarojnë endpoints e API-t dhe aplikojnë middleware |
+| **Controllers** | Analizojnë kërkesat HTTP, thërrasin metodat e services, dërgojnë përgjigjet |
+| **Services** | Logjika e biznesit dhe validimi (pa dijeni për HTTP) |
+| **Repositories** | Qasja në të dhëna — e gjithë SQL gjendet këtu |
+| **Models** | Objekte të thjeshta të të dhënave (pa logjikë) |
+| **Middleware** | Verifikimi i JWT, ruajtja e roleve, trajtimi i gabimeve |
 
-The **Repository Pattern** (`IRepository` interface + concrete implementations) allows the entire backend to switch between PostgreSQL and CSV storage by changing a single environment variable (`USE_DB=true/false`). Services never import database libraries directly.
+**Repository Pattern** (`IRepository` interface + implementime konkrete) lejon që i gjithë backend-i të kalojë ndërmjet PostgreSQL dhe CSV duke ndryshuar vetëm një environment variable (`USE_DB=true/false`). Services nuk importojnë kurrë libraritë e bazës së të dhënave drejtpërdrejt.
 
 ---
 
-## 4. Getting Started
+## 4. Fillimi i Punës
 
-### 4.1 Prerequisites
+### 4.1 Kërkesat Paraprake
 
-- [Node.js](https://nodejs.org/) v18 or higher
-- [PostgreSQL](https://www.postgresql.org/) v14 or higher, running locally
-- `npm` (comes with Node.js)
+- [Node.js](https://nodejs.org/) v18 ose më i lartë
+- [PostgreSQL](https://www.postgresql.org/) v14 ose më i lartë, duke punuar lokalisht
+- `npm` (vjen me Node.js)
 - Git
 
 ### 4.2 Environment Variables
 
-Create a file called `.env` inside the `backend/` directory. You can copy `.env.example` as a starting point:
+Krijo një skedar të quajtur `.env` brenda direktorisë `backend/`. Mund ta kopjosh `.env.example` si pikënisje:
 
 ```bash
 cp backend/.env.example backend/.env
 ```
 
-Then fill in your values:
+Pastaj plotëso vlerat:
 
-| Variable | Required | Default | Description |
+| Variabla | E detyrueshme | Default | Përshkrimi |
 |---|---|---|---|
-| `PORT` | No | `5000` | Port the Express server listens on |
-| `DB_HOST` | Yes | `localhost` | PostgreSQL host |
-| `DB_PORT` | No | `5432` | PostgreSQL port |
-| `DB_NAME` | Yes | — | Name of your PostgreSQL database (e.g. `local_services_marketplace`) |
-| `DB_USER` | Yes | `postgres` | PostgreSQL username |
-| `DB_PASSWORD` | Yes | — | PostgreSQL password for the above user |
-| `JWT_SECRET` | **Yes** | — | Long random secret used to sign JWTs. **Never commit this.** |
-| `USE_DB` | No | `false` | Set to `true` to use PostgreSQL; `false` to use CSV files |
+| `PORT` | Jo | `5000` | Porta ku dëgjon serveri Express |
+| `DB_HOST` | Po | `localhost` | Host-i i PostgreSQL |
+| `DB_PORT` | Jo | `5432` | Porta e PostgreSQL |
+| `DB_NAME` | Po | — | Emri i bazës tënde të të dhënave (p.sh. `local_services_marketplace`) |
+| `DB_USER` | Po | `postgres` | Përdoruesi i PostgreSQL |
+| `DB_PASSWORD` | Po | — | Fjalëkalimi i PostgreSQL për përdoruesin e mësipërm |
+| `JWT_SECRET` | **Po** | — | Secret i gjatë dhe random për nënshkrimin e JWT-ve. **Mos e commit kurrë.** |
+| `USE_DB` | Jo | `false` | Vendos `true` për PostgreSQL; `false` për skedarë CSV |
 
-> **Security note:** `.env` is listed in `.gitignore` and will never be committed to Git.
-> **Never share or commit your real `DB_PASSWORD` or `JWT_SECRET`.**
-> The values below are illustrative placeholders only — replace every one of them.
+> **Shënim sigurie:** `.env` është i listuar në `.gitignore` dhe nuk do të commit-ohet kurrë në Git.
+> **Mos shpërndaj ose commit-o kurrë `DB_PASSWORD` ose `JWT_SECRET` real.**
+> Vlerat më poshtë janë vetëm shembuj ilustrativë — zëvendëso secilin prej tyre.
 
-Example `.env`:
+Shembull `.env`:
 
 ```env
 PORT=5000
@@ -115,36 +114,36 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=local_services_marketplace
 DB_USER=postgres
-DB_PASSWORD=YOUR_REAL_POSTGRES_PASSWORD_HERE
-JWT_SECRET=replace-this-with-a-long-random-secret-at-least-32-chars
+DB_PASSWORD=FJALEKALIMI_YT_REAL_POSTGRES_KETU
+JWT_SECRET=zevndesoje-me-nje-secret-te-gjate-random-te-pakten-32-karaktere
 USE_DB=true
 ```
 
-### 4.3 Database Setup
+### 4.3 Konfigurimi i Bazës së të Dhënave
 
-1. **Create the database** in PostgreSQL:
-   ```sql
+1. **Krijo bazën e të dhënave** në PostgreSQL:
+```sql
    CREATE DATABASE local_services_marketplace;
-   ```
+```
 
-2. **Apply the schema** (creates all tables, indexes, and foreign key constraints):
-   ```bash
+2. **Apliko skemin** (krijon të gjitha tabelat, indekset dhe kufizimet e çelësave të huaj):
+```bash
    cd backend
    npm run db:schema
-   ```
+```
 
-3. **Verify** the tables were created:
-   ```bash
+3. **Verifiko** që tabelat u krijuan:
+```bash
    npm run db:check
-   ```
-   You should see: `users`, `services`, `bookings`, `reviews`, `categories`, `payments`, and more.
+```
+   Duhet të shohësh: `users`, `services`, `bookings`, `reviews`, `categories`, `payments`, dhe të tjera.
 
-4. **Quick connection smoke test**:
-   ```bash
+4. **Test i shpejtë i lidhjes**:
+```bash
    npm run db:test
-   ```
+```
 
-### 4.4 Running the Backend
+### 4.4 Ekzekutimi i Backend-it
 
 ```bash
 cd backend
@@ -152,9 +151,9 @@ npm install
 node server.js
 ```
 
-The API will be available at: **http://localhost:5000**
+API-ja do të jetë e disponueshme në: **http://localhost:5000**
 
-### 4.5 Running the Frontend
+### 4.5 Ekzekutimi i Frontend-it
 
 ```bash
 cd frontend
@@ -162,132 +161,130 @@ npm install
 npm start
 ```
 
-The React app will open at: **http://localhost:3000**
+Aplikacioni React do të hapet në: **http://localhost:3000**
 
-### 4.6 Running Tests
+### 4.6 Ekzekutimi i Testeve
 
 ```bash
 cd backend
 npm test
 ```
 
-This runs Jest in verbose mode across all files in `backend/tests/`. Tests use in-memory repository stubs — no database connection is required.
+Kjo ekzekuton Jest në modalitet verbose për të gjitha skedarët në `backend/tests/`. Testet përdorin repository stubs në memorie — nuk kërkohet lidhje me bazën e të dhënave.
 
 ---
 
 ## 5. API Reference
 
-All authenticated routes require the header:
+Të gjitha routes të autentikuara kërkojnë header-in:
 ```
 Authorization: Bearer <token>
 ```
 
-### Authentication
+### Autentikimi
 
-| Method | Endpoint | Auth Required | Description |
+| Metoda | Endpoint | Auth e Nevojshme | Përshkrimi |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | No | Register as customer or provider |
-| `POST` | `/api/auth/login` | No | Login, returns JWT token |
+| `POST` | `/api/auth/register` | Jo | Regjistrohu si customer ose provider |
+| `POST` | `/api/auth/login` | Jo | Hyr, kthen JWT token |
 
-### Services
+### Shërbimet (Services)
 
-| Method | Endpoint | Auth Required | Description |
+| Metoda | Endpoint | Auth e Nevojshme | Përshkrimi |
 |---|---|---|---|
-| `GET` | `/api/services` | No | List all services (supports `?category=&location=` filters) |
-| `GET` | `/api/services/:id` | No | Get a single service by ID |
-| `POST` | `/api/services` | Yes (provider) | Create a new service listing |
-| `PUT` | `/api/services/:id` | Yes (provider/admin) | Update a service |
-| `DELETE` | `/api/services/:id` | Yes (provider/admin) | Delete a service |
+| `GET` | `/api/services` | Jo | Listo të gjitha shërbimet (mbështet filtrat `?category=&location=`) |
+| `GET` | `/api/services/:id` | Jo | Merr një shërbim të vetëm sipas ID-së |
+| `POST` | `/api/services` | Po (provider) | Krijo një listim të ri shërbimi |
+| `PUT` | `/api/services/:id` | Po (provider/admin) | Përditëso një shërbim |
+| `DELETE` | `/api/services/:id` | Po (provider/admin) | Fshi një shërbim |
 
-### Bookings
+### Rezervimet (Bookings)
 
-| Method | Endpoint | Auth Required | Description |
+| Metoda | Endpoint | Auth e Nevojshme | Përshkrimi |
 |---|---|---|---|
-| `GET` | `/api/bookings` | Yes | Get bookings (filtered by role automatically) |
-| `POST` | `/api/bookings` | Yes (customer) | Create a booking |
-| `PATCH` | `/api/bookings/:id/status` | Yes (provider/admin) | Update booking status |
-| `DELETE` | `/api/bookings/:id` | Yes | Cancel / delete a booking |
+| `GET` | `/api/bookings` | Po | Merr bookings (filtruar automatikisht sipas rolit) |
+| `POST` | `/api/bookings` | Po (customer) | Krijo një booking |
+| `PATCH` | `/api/bookings/:id/status` | Po (provider/admin) | Përditëso statusin e booking-ut |
+| `DELETE` | `/api/bookings/:id` | Po | Anulo / fshi një booking |
 
-**Valid booking statuses:** `pending` → `confirmed` → `completed` or `cancelled`
+**Statuset e vlefshme të booking-ut:** `pending` → `confirmed` → `completed` ose `cancelled`
 
-### Reviews
+### Vlerësimet (Reviews)
 
-| Method | Endpoint | Auth Required | Description |
+| Metoda | Endpoint | Auth e Nevojshme | Përshkrimi |
 |---|---|---|---|
-| `GET` | `/api/reviews` | No | Get all reviews |
-| `POST` | `/api/reviews` | Yes (customer) | Submit a review (rating 1–5) |
-| `DELETE` | `/api/reviews/:id` | Yes (admin) | Remove a review |
+| `GET` | `/api/reviews` | Jo | Merr të gjitha reviews |
+| `POST` | `/api/reviews` | Po (customer) | Dërgo një review (vlerësim 1–5) |
+| `DELETE` | `/api/reviews/:id` | Po (admin) | Hiq një review |
 
-### Users
+### Përdoruesit (Users)
 
-| Method | Endpoint | Auth Required | Description |
+| Metoda | Endpoint | Auth e Nevojshme | Përshkrimi |
 |---|---|---|---|
-| `GET` | `/api/users` | Yes (admin) | List all users |
-| `GET` | `/api/users/:id` | Yes | Get user profile |
-| `PUT` | `/api/users/:id` | Yes | Update user profile |
+| `GET` | `/api/users` | Po (admin) | Listo të gjithë përdoruesit |
+| `GET` | `/api/users/:id` | Po | Merr profilin e përdoruesit |
+| `PUT` | `/api/users/:id` | Po | Përditëso profilin e përdoruesit |
 
 ---
 
-## 6. Project Structure
+## 6. Struktura e Projektit
 
 ```
 local-services-marketplace/
 ├── frontend/
 │   └── src/
-│       ├── pages/          # React page components
-│       ├── context/        # AuthContext (JWT + user state)
+│       ├── pages/          # Komponentet e faqeve React
+│       ├── context/        # AuthContext (JWT + gjendja e përdoruesit)
 │       └── services/       # API client (api.js)
 │
 ├── backend/
 │   ├── config/
-│   │   ├── db.js           # PostgreSQL connection pool
-│   │   └── schema.sql      # Full database schema
-│   ├── controllers/        # HTTP request handlers
-│   ├── services/           # Business logic (AuthService, ServiceService, etc.)
-│   ├── repositories/       # Data access layer
-│   │   ├── IRepository.js  # Abstract interface
-│   │   ├── DatabaseRepository.js  # PostgreSQL implementation
-│   │   ├── FileRepository.js      # CSV fallback implementation
-│   │   └── ...             # Entity-specific repositories
-│   ├── routes/             # Express routers
-│   ├── middleware/         # JWT auth, role guards, error handler
-│   ├── models/             # Plain data model definitions
-│   ├── tests/              # Jest unit tests (no real DB needed)
-│   ├── container.js        # Dependency Injection container (wires repos → services)
-│   ├── app.js              # Express app setup (security headers, CORS, rate limiting)
-│   └── server.js           # Server entry point
+│   │   ├── db.js           # Connection pool i PostgreSQL
+│   │   └── schema.sql      # Skema e plotë e bazës së të dhënave
+│   ├── controllers/        # Trajtuesit e kërkesave HTTP
+│   ├── services/           # Logjika e biznesit (AuthService, ServiceService, etj.)
+│   ├── repositories/       # Shtresa e qasjes në të dhëna
+│   │   ├── IRepository.js          # Interface abstrakte
+│   │   ├── DatabaseRepository.js   # Implementimi PostgreSQL
+│   │   ├── FileRepository.js       # Implementimi alternativ CSV
+│   │   └── ...             # Repository-t specifike për entitete
+│   ├── routes/             # Routerët e Express
+│   ├── middleware/         # JWT auth, mbrojtja e roleve, trajtimi i gabimeve
+│   ├── models/             # Definicionet e modeleve të të dhënave
+│   ├── tests/              # Testet unit të Jest (pa nevojë për DB reale)
+│   ├── container.js        # Kontejneri i Dependency Injection (lidh repos → services)
+│   ├── app.js              # Konfigurimi i Express (security headers, CORS, rate limiting)
+│   └── server.js           # Pika hyrëse e serverit
 │
 ├── docs/
 │   ├── architecture.md
 │   ├── class-diagram.md
-│   ├── project-audit.md       # Audit Report
-│   ├── improvement-report.md  # Improvement Sprint Report
-│   ├── implementation.md      # Implementation Notes
-│   ├── sprint-plan.md         # Sprint Plan
-│   ├── sprint-report.md       # Sprint Report
-│   └── demo-plan.md           # Demo Readiness Plan
+│   ├── project-audit.md       # Raporti i Auditimit
+│   ├── improvement-report.md  # Raporti i Sprint-it të Përmirësimit
+│   ├── implementation.md      # Shënime Implementimi
+│   ├── sprint-plan.md         # Plani i Sprint-it
+│   ├── sprint-report.md       # Raporti i Sprint-it
+│   └── demo-plan.md           # Plani i Gatishmërisë për Demo
 │
 ├── .gitignore
 └── README.md
 ```
-
 ---
 
-## 7. Design Principles
+## 7. Parimet e Dizajnit
 
-| Principle | How It Is Applied |
+| Parimi | Si Aplikohet |
 |---|---|
-| **SRP** (Single Responsibility) | Each layer (controller / service / repository) has exactly one job |
-| **OCP** (Open/Closed) | New repository implementations can be added without modifying service code |
-| **DIP** (Dependency Inversion) | Services depend on `IRepository`, never on `DatabaseRepository` directly |
-| **Repository Pattern** | Abstracts all data access; storage can be swapped via `USE_DB` env flag |
-| **Layered Architecture** | Clear data flow: Route → Controller → Service → Repository → DB |
+| **SRP** (Single Responsibility) | Çdo shtresë (controller / service / repository) ka saktësisht një detyrë |
+| **OCP** (Open/Closed) | Implementime të reja të repository mund të shtohen pa modifikuar kodin e services |
+| **DIP** (Dependency Inversion) | Services varen nga `IRepository`, kurrë drejtpërdrejt nga `DatabaseRepository` |
+| **Repository Pattern** | Abstrakton të gjithë qasjen në të dhëna; ruajtja mund të ndryshohet me env flag `USE_DB` |
+| **Layered Architecture** | Rrjedhë e qartë e të dhënave: Route → Controller → Service → Repository → DB |
 
 ---
 
-## 8. Author
+## 8. Autor
 
 **Devlete Hasani**  
-Student, Faculty of Mechanical and Computer Engineering
+Studente, Fakulteti i Inxhinierisë Mekanike dhe Kompjuterike
 
----
