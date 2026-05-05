@@ -1,10 +1,18 @@
 /**
  * ReviewService — Business logic for reviews.
  * All methods async.
+ *
+ * bookingService is injected so we can verify a booking exists
+ * and has status 'completed' before allowing a review.
  */
 class ReviewService {
-  constructor(repository) {
-    this.repository = repository;
+  /**
+   * @param {object} repository     - ReviewRepository instance
+   * @param {object} bookingService - BookingService instance (optional; skips check if absent)
+   */
+  constructor(repository, bookingService = null) {
+    this.repository     = repository;
+    this.bookingService = bookingService;
   }
 
   async getAllReviews() {
@@ -37,11 +45,23 @@ class ReviewService {
     const r = Number(rating);
     if (isNaN(r) || r < 1 || r > 5) throw new Error('Rating must be between 1 and 5.');
     if (!userId || !providerId)       throw new Error('userId and providerId are required.');
+    if (!bookingId)                   throw new Error('A booking must be selected to post a review.');
+
+    // Guard: booking must exist and be completed
+    if (this.bookingService) {
+      const booking = await this.bookingService.getBookingById(Number(bookingId));
+      if (!booking) {
+        throw new Error('Booking not found.');
+      }
+      if (String(booking.status).toLowerCase() !== 'completed') {
+        throw new Error('You can only review a completed booking.');
+      }
+    }
 
     return this.repository.add({
       userId:     Number(userId),
       providerId: Number(providerId),
-      bookingId:  bookingId ? Number(bookingId) : null,
+      bookingId:  Number(bookingId),
       rating:     r,
       comment,
     });

@@ -75,6 +75,12 @@ class BookingDatabaseRepository extends DatabaseRepository {
     };
   }
 
+  /** Enriched SELECT — returns serviceTitle and providerName for all bookings. */
+  async getAll() {
+    const res = await this._enrichedQuery('', []);
+    return res.rows.map(r => this._mapEnriched(r));
+  }
+
   async getByUserId(userId) {
     const res = await this._enrichedQuery('WHERE b.user_id = $1', [Number(userId)]);
     return res.rows.map(r => this._mapEnriched(r));

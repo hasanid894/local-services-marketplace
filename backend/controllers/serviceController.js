@@ -9,6 +9,8 @@
  */
 
 const { serviceService } = require('../container');
+const CategoryRepository = require('../repositories/CategoryRepository');
+const categoryRepository = new CategoryRepository();
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,14 +63,30 @@ exports.getServiceById = async (req, res) => {
 /**
  * POST /api/services
  * Body: { providerId, categoryId, title, description, price, location, latitude, longitude }
+ *
+ * Frontend currently sends a free‑text `category` field instead of `categoryId`.
+ * To keep the API ergonomic, we transparently map `category` → `categoryId`
+ * using the categories table, creating the category on the fly if needed.
  */
 exports.createService = async (req, res) => {
   try {
     const payload = { ...req.body };
+
+    // Map free‑text category name to a categoryId, if necessary
+    if (!payload.categoryId && payload.category) {
+      const name = String(payload.category).trim();
+      if (name) {
+        const category = await categoryRepository.findOrCreate(name);
+        payload.categoryId = category.id;
+      }
+    }
+    delete payload.category;
+
     // Inject the authenticated provider's id if they don't supply one
     if (req.user?.role === 'provider' && !payload.providerId) {
       payload.providerId = req.user.id;
     }
+
     const created = await serviceService.createService(payload);
     res.status(201).json(created);
   } catch (err) {

@@ -5,6 +5,36 @@ import { api } from '../services/api';
 
 const STARS = [1, 2, 3, 4, 5];
 
+// Deterministic pastel colour from a name string
+const AVATAR_PALETTES = [
+  ['#7c3aed', '#ede9fe'], ['#0e7490', '#cffafe'], ['#047857', '#d1fae5'],
+  ['#b45309', '#fef3c7'], ['#be185d', '#fce7f3'], ['#1d4ed8', '#dbeafe'],
+];
+function avatarPalette(name = '') {
+  const code = [...(name || '?')].reduce((s, c) => s + c.charCodeAt(0), 0);
+  return AVATAR_PALETTES[code % AVATAR_PALETTES.length];
+}
+function initials(name = '') {
+  return (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+function InitialsAvatar({ name, size = 38 }) {
+  const [bg, fg] = avatarPalette(name);
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: size, height: size, borderRadius: '50%',
+        background: bg, color: fg,
+        fontWeight: 700, fontSize: size * 0.38,
+        flexShrink: 0, letterSpacing: '-0.03em',
+      }}
+    >
+      {initials(name)}
+    </span>
+  );
+}
+
 export default function ReviewsPage() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -17,6 +47,8 @@ export default function ReviewsPage() {
   const [form, setForm] = useState({ providerId: '', bookingId: '', rating: 5, comment: '' });
   const [formError, setFormError] = useState('');
 
+  const isProvider = user?.role?.toLowerCase() === 'provider';
+
   const fetchReviews = async (pid = filterProviderId) => {
     const params = pid ? `providerId=${pid}` : '';
     const { ok, data } = await api.getReviews(params);
@@ -24,12 +56,20 @@ export default function ReviewsPage() {
     else setError(data?.error || 'Failed to load reviews.');
   };
 
-  // Load providers for filter dropdown (public endpoint, no auth needed)
+  // Load providers for the filter dropdown and seed the initial filter.
+  // If the logged-in user is a provider, auto-filter to their own reviews.
   useEffect(() => {
     api.getProviders().then(({ ok, data }) => {
       if (ok && Array.isArray(data)) setProviders(data);
     });
-    fetchReviews();
+
+    if (isProvider && user?.id) {
+      // Pre-filter to this provider's reviews without showing the dropdown
+      setFilterProviderId(String(user.id));
+      fetchReviews(String(user.id));
+    } else {
+      fetchReviews();
+    }
   }, []);
 
   const handleProviderFilter = (e) => {
@@ -48,8 +88,8 @@ export default function ReviewsPage() {
     const params = `userId=${user.id}`;
     api.getBookings(params, token).then(({ ok, data }) => {
       if (ok && Array.isArray(data)) {
-        // Show all bookings so the user can review at any stage
-        setMyBookings(data);
+        // Only completed bookings can be reviewed
+        setMyBookings(data.filter(b => String(b.status).toLowerCase() === 'completed'));
       }
     });
   }, [user, token]);
@@ -107,38 +147,44 @@ export default function ReviewsPage() {
     <div className="page">
       <div className="page-hero">
         <h1>Reviews</h1>
-        <p>See what the community says about providers, or share your own experience after a booking.</p>
+        <p>
+          {isProvider
+            ? 'Your reviews from customers — see how your service is rated.'
+            : 'See what the community says about providers, or share your own experience after a booking.'}
+        </p>
       </div>
 
       {error && <div className="error-banner" role="alert">{error}</div>}
       {success && <div className="success-banner" role="status">{success}</div>}
 
-      {/* Filter */}
-      <section className="panel">
-        <h2>Filter by provider</h2>
-        <div className="row">
-          <select
-            id="filter-provider"
-            value={filterProviderId}
-            onChange={handleProviderFilter}
-            style={{ minWidth: '220px' }}
-          >
-            <option value="">— All providers —</option>
-            {providers.map(p => (
-              <option key={p.id} value={String(p.id)}>{p.name}</option>
-            ))}
-          </select>
-          {filterProviderId && (
-            <button
-              type="button"
-              className="ghost"
-              onClick={() => handleProviderFilter({ target: { value: '' } })}
+      {/* Filter — hidden for providers (they only see their own reviews) */}
+      {!isProvider && (
+        <section className="panel">
+          <h2>Filter by provider</h2>
+          <div className="row">
+            <select
+              id="filter-provider"
+              value={filterProviderId}
+              onChange={handleProviderFilter}
+              style={{ minWidth: '220px' }}
             >
-              Clear
-            </button>
-          )}
-        </div>
-      </section>
+              <option value="">— All providers —</option>
+              {providers.map(p => (
+                <option key={p.id} value={String(p.id)}>{p.name}</option>
+              ))}
+            </select>
+            {filterProviderId && (
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => handleProviderFilter({ target: { value: '' } })}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Post Review Form — logged-in customers */}
       {user && user.role?.toLowerCase() !== 'provider' && (
@@ -152,7 +198,7 @@ export default function ReviewsPage() {
               <label htmlFor="review-booking">Select a booking to review</label>
               {myBookings.length === 0 ? (
                 <p className="info-hint">
-                  💡 You need at least one booking to write a review.{' '}
+                  💡 You need at least one <strong>completed</strong> booking to write a review.{' '}
                   <button className="link-btn" type="button" onClick={() => navigate('/services')}>
                     Browse services
                   </button>
@@ -215,20 +261,31 @@ export default function ReviewsPage() {
 
       {/* Reviews List */}
       <section className="panel">
-        <h2>Reviews ({reviews.length})</h2>
+        <h2>{isProvider ? 'Your Reviews' : 'Reviews'} ({reviews.length})</h2>
         {reviews.length === 0 && <p className="empty">No reviews found.</p>}
         <div className="cards-grid">
           {reviews.map(r => (
             <article key={r.id} className="card review-card">
               <div className="card-body">
                 <div className="review-header">
-                  <div>{renderStars(r.rating)}</div>
-                  <span className="review-rating">{r.rating}/5</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    <InitialsAvatar name={r.userName || `User ${r.userId}`} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', lineHeight: 1.2 }}>
+                        {r.userName || `User #${r.userId}`}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {r.providerName ? `➡️ ${r.providerName}` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <div>{renderStars(r.rating)}</div>
+                    <span className="review-rating">{r.rating}/5</span>
+                  </div>
                 </div>
                 <p className="review-comment">{r.comment || 'No comment.'}</p>
                 <div className="card-meta">
-                  <span>👤 {r.userName || `User #${r.userId}`}</span>
-                  <span>🔧 {r.providerName || `Provider #${r.providerId}`}</span>
                   {r.serviceTitle && <span>📋 {r.serviceTitle}</span>}
                 </div>
                 <p className="card-meta-small">{new Date(r.createdAt).toLocaleDateString()}</p>

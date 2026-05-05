@@ -38,7 +38,7 @@ const reviewRepository  = createReviewRepository();
 const authService         = new AuthService(userRepository);
 const serviceService      = new ServiceService(serviceRepository);
 const bookingService      = new BookingService(bookingRepository);
-const reviewService       = new ReviewService(reviewRepository);
+const reviewService       = new ReviewService(reviewRepository, bookingService);
 const userService         = new UserService(userRepository);
 const notificationService = new NotificationService();
 

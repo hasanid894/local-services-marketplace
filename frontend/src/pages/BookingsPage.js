@@ -110,7 +110,7 @@ export default function BookingsPage() {
             <form onSubmit={handleCreate} className="form-grid">
               {/* Read-only confirmation — no raw ID inputs shown to real users */}
               <div className="prefill-info">
-                <span>📋 <strong>Service #{form.serviceId}</strong> — booked from the Services page</span>
+                <span>📋 <strong>{prefill.serviceTitle || `Service #${form.serviceId}`}</strong> — booked from the Services page</span>
               </div>
               <input
                 id="booking-date"
@@ -160,9 +160,9 @@ export default function BookingsPage() {
                     {b.status}
                   </span>
                 </div>
-                <p><strong>Service:</strong> #{b.serviceId}</p>
-                <p><strong>Provider:</strong> #{b.providerId}</p>
-                <p><strong>Date:</strong> {b.scheduledDate}</p>
+                <p><strong>Service:</strong> {b.serviceTitle || `#${b.serviceId}`}</p>
+                <p><strong>Provider:</strong> {b.providerName || `#${b.providerId}`}</p>
+                <p><strong>Date:</strong> {b.scheduledDate ? b.scheduledDate.slice(0, 10) : '—'}</p>
                 {b.notes && <p><strong>Notes:</strong> {b.notes}</p>}
                 <p className="card-meta-small">Created: {new Date(b.createdAt).toLocaleDateString()}</p>
               </div>

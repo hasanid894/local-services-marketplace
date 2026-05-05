@@ -22,13 +22,14 @@ function mapRow(row) {
     latitude:    row.latitude   ? parseFloat(row.latitude)  : null,
     longitude:   row.longitude  ? parseFloat(row.longitude) : null,
     isActive:    row.is_active,
+    imageUrl:    row.image_url  || null,
     createdAt:   row.created_at,
   };
 }
 
 const INSERT_COLS = [
   'provider_id', 'category_id', 'title', 'description',
-  'price', 'location', 'latitude', 'longitude', 'is_active',
+  'price', 'location', 'latitude', 'longitude', 'is_active', 'image_url',
 ];
 
 function toDbRow(entity) {
@@ -42,6 +43,7 @@ function toDbRow(entity) {
     entity.latitude   ?? null,
     entity.longitude  ?? null,
     entity.isActive   ?? true,
+    entity.imageUrl   || null,
   ];
 }
 
@@ -50,7 +52,7 @@ function toDbRow(entity) {
 // Valid snake_case columns that may appear in UPDATE SET clauses (Weakness 6 fix)
 const SERVICE_ALLOWED_COLS = new Set([
   'provider_id', 'category_id', 'title', 'description',
-  'price', 'location', 'latitude', 'longitude', 'is_active',
+  'price', 'location', 'latitude', 'longitude', 'is_active', 'image_url',
 ]);
 
 class ServiceDatabaseRepository extends DatabaseRepository {
@@ -116,6 +118,7 @@ class ServiceDatabaseRepository extends DatabaseRepository {
       latitude:    'latitude',
       longitude:   'longitude',
       isActive:    'is_active',
+      imageUrl:    'image_url',
     };
     const sqlData = {};
     for (const [key, val] of Object.entries(updatedData)) {

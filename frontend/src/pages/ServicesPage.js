@@ -3,16 +3,61 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
+// Curated Unsplash photos keyed to common service categories (case-insensitive substring match)
+const CATEGORY_IMAGES = {
+  plumbing:    'https://images.unsplash.com/photo-1585704032915-c3400305e979?w=600&q=75&auto=format',
+  electrical:  'https://images.unsplash.com/photo-1621905251189-08b45249ff78?w=600&q=75&auto=format',
+  cleaning:    'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=75&auto=format',
+  tutor:       'https://images.unsplash.com/photo-1588072432836-e10032774350?w=600&q=75&auto=format',
+  handyman:    'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&q=75&auto=format',
+  it:          'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=75&auto=format',
+  beauty:      'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=75&auto=format',
+  wellness:    'https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=600&q=75&auto=format',
+  moving:      'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=75&auto=format',
+  garden:      'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=75&auto=format',
+  painting:    'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&q=75&auto=format',
+  carpentry:   'https://images.unsplash.com/photo-1540496905036-5937c10647cc?w=600&q=75&auto=format',
+  default:     'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&q=75&auto=format',
+};
+
+// Small inline placeholder so cards never render as a "black box" if all URLs fail.
+const IMAGE_PLACEHOLDER =
+  'data:image/svg+xml;charset=utf-8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#22d3ee" stop-opacity="0.25"/>
+          <stop offset="1" stop-color="#a78bfa" stop-opacity="0.15"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="480" fill="#0b1220"/>
+      <rect x="20" y="20" width="760" height="440" rx="22" fill="url(#g)" stroke="rgba(148,163,184,0.25)"/>
+      <text x="400" y="250" text-anchor="middle" font-family="Plus Jakarta Sans, Arial" font-size="34" fill="#94a3b8" font-weight="700">
+        No image
+      </text>
+      <text x="400" y="300" text-anchor="middle" font-family="Plus Jakarta Sans, Arial" font-size="18" fill="#94a3b8">
+        (URL failed to load)
+      </text>
+    </svg>`
+  );
+
+function getCategoryImage(category = '') {
+  const key = category.toLowerCase();
+  for (const [k, url] of Object.entries(CATEGORY_IMAGES)) {
+    if (k !== 'default' && key.includes(k)) return url;
+  }
+  return CATEGORY_IMAGES.default;
+}
+
 export default function ServicesPage() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
 
   const [services, setServices] = useState([]);
   const [filters, setFilters] = useState({ category: '', location: '' });
-  const [findId, setFindId] = useState('');
-  const [foundService, setFoundService] = useState(null);
-  const [findError, setFindError] = useState('');
-  const [form, setForm] = useState({ title: '', description: '', category: '', location: '', price: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [form, setForm] = useState({ title: '', description: '', category: '', location: '', price: '', imageUrl: '' });
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState('');
   const [globalError, setGlobalError] = useState('');
@@ -49,18 +94,18 @@ export default function ServicesPage() {
 
   const handleFilter = (e) => { e.preventDefault(); fetchServices(); };
 
-  const handleFindById = async (e) => {
-    e.preventDefault();
-    setFindError(''); setFoundService(null);
-    const numId = Number(findId);
-    if (!findId.trim() || isNaN(numId) || !Number.isInteger(numId) || numId <= 0) {
-      setFindError('Please enter a valid ID (positive integer).');
-      return;
-    }
-    const { ok, data } = await api.getServiceById(numId);
-    if (!ok) { setFindError(data?.error || `No service with id ${numId}.`); return; }
-    setFoundService(data);
-  };
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const visibleServices = services.filter(s => {
+    if (!normalizedSearch) return true;
+    const title = String(s.title || '').toLowerCase();
+    const description = String(s.description || '').toLowerCase();
+    const category = String(s.categoryName || s.category || '').toLowerCase();
+    return (
+      title.includes(normalizedSearch) ||
+      description.includes(normalizedSearch) ||
+      category.includes(normalizedSearch)
+    );
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,13 +123,20 @@ export default function ServicesPage() {
       : await api.createService(form, token);
 
     if (!ok) { setFormError(data?.error || (editingId ? 'Update failed.' : 'Create failed.')); return; }
-    setForm({ title: '', description: '', category: '', location: '', price: '' });
+    setForm({ title: '', description: '', category: '', location: '', price: '', imageUrl: '' });
     setEditingId(null);
     fetchServices();
   };
 
   const handleEdit = (s) => {
-    setForm({ title: s.title, description: s.description || '', category: s.category, location: s.location, price: s.price });
+    setForm({
+      title:       s.title,
+      description: s.description || '',
+      category:    s.category    || '',
+      location:    s.location    || '',
+      price:       s.price,
+      imageUrl:    s.imageUrl    || '',
+    });
     setEditingId(s.id);
     setFormError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -121,18 +173,18 @@ export default function ServicesPage() {
           <button type="submit">Apply</button>
           <button type="button" className="ghost" onClick={() => { setFilters({ category: '', location: '' }); fetchServices(); }}>Clear</button>
         </form>
-        <form onSubmit={handleFindById} className="row" style={{ marginTop: '0.75rem' }}>
-          <input placeholder="Find by ID (number)" value={findId}
-            onChange={e => setFindId(e.target.value)} />
-          <button type="submit">Find</button>
-        </form>
-        {findError && <p className="error">{findError}</p>}
-        {foundService && (
-          <div className="found-card">
-            <strong>{foundService.title}</strong> — {foundService.category}, {foundService.location} — <strong>{foundService.price} EUR</strong>
-            <p className="found-desc">{foundService.description}</p>
-          </div>
-        )}
+        <div className="row" style={{ marginTop: '0.75rem' }}>
+          <input
+            placeholder="Search by service title or description"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          {searchTerm.trim() && (
+            <button type="button" className="ghost" onClick={() => setSearchTerm('')}>
+              Clear Search
+            </button>
+          )}
+        </div>
       </section>
 
       {/* Add / Edit Form */}
@@ -146,10 +198,25 @@ export default function ServicesPage() {
             <input placeholder="Location" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
             <input placeholder="Price (EUR) *" type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
             <textarea placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+            <input
+              placeholder="Image URL (optional — paste a direct photo link)"
+              value={form.imageUrl}
+              onChange={e => setForm({ ...form, imageUrl: e.target.value })}
+            />
+            {form.imageUrl && (
+              <div className="img-preview-wrap">
+                <img
+                  src={form.imageUrl}
+                  alt="Preview"
+                  className="img-preview"
+                  onError={e => { e.currentTarget.style.display = 'none'; }}
+                />
+              </div>
+            )}
             <div className="form-actions">
               <button type="submit" className="btn-primary">{editingId ? 'Update Service' : 'Add Service'}</button>
               {editingId && (
-                <button type="button" className="ghost" onClick={() => { setEditingId(null); setForm({ title: '', description: '', category: '', location: '', price: '' }); setFormError(''); }}>
+                <button type="button" className="ghost" onClick={() => { setEditingId(null); setForm({ title: '', description: '', category: '', location: '', price: '', imageUrl: '' }); setFormError(''); }}>
                   Cancel
                 </button>
               )}
@@ -166,23 +233,52 @@ export default function ServicesPage() {
 
       {/* Services List */}
       <section className="panel">
-        <h2>Services ({services.length})</h2>
+        <h2>Services ({visibleServices.length})</h2>
         <div className="cards-grid">
-          {services.length === 0 && <p className="empty">No services found.</p>}
-          {services.map(s => (
-            <article key={s.id} className="card">
+          {visibleServices.length === 0 && <p className="empty">No services found.</p>}
+          {visibleServices.map(s => (
+            <article key={s.id} className="card service-card">
+              {/* Category hero image */}
+              <div className="card-img-wrap">
+                <img
+                  src={s.imageUrl || getCategoryImage(s.categoryName || s.category)}
+                  alt={s.category || 'Service'}
+                  className="card-img"
+                  loading="lazy"
+                  onError={e => {
+                    const img = e.currentTarget;
+                    const fallback = getCategoryImage(s.categoryName || s.category);
+
+                    // Avoid infinite error loop if both `imageUrl` and `fallback` fail.
+                    if (img.dataset.didFallback === 'true' || img.src === fallback) {
+                      img.src = IMAGE_PLACEHOLDER;
+                      return;
+                    }
+
+                    img.dataset.didFallback = 'true';
+                    img.src = fallback;
+                  }}
+                />
+                {s.category && (
+                  <span className="card-img-badge">{s.category}</span>
+                )}
+              </div>
               <div className="card-body">
                 <h3>{s.title}</h3>
                 <p className="card-desc">{s.description || 'No description provided.'}</p>
                 <div className="card-meta">
-                  <span className="tag">{s.category || 'General'}</span>
                   <span className="tag">📍 {s.location || '—'}</span>
                 </div>
               </div>
               <div className="card-footer">
                 <strong className="price">{s.price} EUR</strong>
                 {!canManageService(s) && user && (
-                  <button className="btn-book" onClick={() => navigate('/bookings', { state: { serviceId: s.id, providerId: s.providerId } })}>
+                  <button
+                    className="btn-book"
+                    onClick={() => navigate('/bookings', {
+                      state: { serviceId: s.id, providerId: s.providerId, serviceTitle: s.title }
+                    })}
+                  >
                     Book
                   </button>
                 )}

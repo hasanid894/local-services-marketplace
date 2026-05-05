@@ -35,6 +35,7 @@ CREATE TABLE services (
     latitude DECIMAL(9,6),
     longitude DECIMAL(9,6),
     is_active BOOLEAN DEFAULT TRUE,
+    image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (provider_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id)

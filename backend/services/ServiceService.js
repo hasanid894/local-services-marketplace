@@ -24,9 +24,11 @@ class ServiceService {
     return this.repository.getById(numericId);
   }
 
-  async createService({ providerId, categoryId, title, description, price, location, latitude, longitude, isActive }) {
+  async createService({ providerId, categoryId, title, description, price, location, latitude, longitude, isActive, imageUrl }) {
     const normalizedTitle = (title ?? '').trim();
     if (!normalizedTitle) throw new Error('Title cannot be empty.');
+
+    const normalizedImageUrl = (imageUrl ?? '').trim();
 
     const parsedPrice = Number(price);
     if (price === undefined || price === null || price === '' || isNaN(parsedPrice)) {
@@ -45,6 +47,7 @@ class ServiceService {
       latitude:   latitude  ?? null,
       longitude:  longitude ?? null,
       isActive:   isActive  ?? true,
+      imageUrl:   normalizedImageUrl ? normalizedImageUrl : null,
     });
   }
 

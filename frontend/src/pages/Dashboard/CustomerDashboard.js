@@ -141,7 +141,7 @@ export default function CustomerDashboard() {
                       <div>
                         <span className="dash-list-title">Booking #{b.id}</span>
                         <span className="dash-list-meta">
-                          Service #{b.serviceId} · {b.scheduledDate || '—'}
+                          {b.serviceTitle || `Service #${b.serviceId}`} · {b.scheduledDate ? b.scheduledDate.slice(0, 10) : '—'}
                         </span>
                       </div>
                       <span className={`status-pill status-pill-${String(b.status).toLowerCase()}`}>

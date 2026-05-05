@@ -79,6 +79,22 @@ test('createService() with valid data returns a service object with an id', asyn
   expect(result.isActive).toBe(true);
 });
 
+test('createService() persists imageUrl on creation', async () => {
+  const svc = makeService();
+  const imageUrl = 'https://example.com/photo.jpg';
+  const result = await svc.createService({
+    providerId: 1,
+    categoryId: 2,
+    title: 'Cleaning Service',
+    description: 'Deep clean',
+    location: 'Prizren',
+    price: 50,
+    imageUrl,
+  });
+
+  expect(result.imageUrl).toBe(imageUrl);
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // 2 — createService() — empty title is rejected
 // ═══════════════════════════════════════════════════════════════════════════════

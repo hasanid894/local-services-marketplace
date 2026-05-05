@@ -1271,6 +1271,9 @@ body {
 .form-grid textarea { grid-column: 1 / -1; }
 .form-grid .form-actions { grid-column: 1 / -1; display: flex; gap: 0.75rem; flex-wrap: wrap; }
 .form-grid .field { grid-column: 1 / -1; }
+/* Image URL input + live preview — both span full width */
+.form-grid input[placeholder^="Image"] { grid-column: 1 / -1; }
+.form-grid .img-preview-wrap { grid-column: 1 / -1; }
 
 input, select, textarea {
   width: 100%;
@@ -1519,4 +1522,97 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (max-width: 640px) {
   .form-grid { grid-template-columns: 1fr; }
   .main-content { padding: 1.25rem 1rem 3rem; }
+}
+
+/* ── Service card image header ── */
+.service-card {
+  /* cards-grid already handles the column layout */
+}
+
+.card-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.service-card:hover .card-img {
+  transform: scale(1.06);
+}
+
+/* Category label pinned to bottom-left of the image */
+.card-img-badge {
+  position: absolute;
+  bottom: 0.55rem;
+  left: 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(6, 8, 15, 0.72);
+  backdrop-filter: blur(6px);
+  color: var(--accent);
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  pointer-events: none;
+}
+
+/* ── Review card avatar header ── */
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* info-hint inside forms */
+.info-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* prefill confirmation bar */
+.prefill-info {
+  grid-column: 1 / -1;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-sm);
+  background: rgba(34, 211, 238, 0.07);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+/* ── Service form: image URL live preview ── */
+.img-preview-wrap {
+  width: 100%;
+  height: 160px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.img-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.2s;
 }
