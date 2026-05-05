@@ -3,23 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
-// Curated Unsplash photos keyed to common service categories (case-insensitive substring match)
-const CATEGORY_IMAGES = {
-  plumbing:    'https://images.unsplash.com/photo-1585704032915-c3400305e979?w=600&q=75&auto=format',
-  electrical:  'https://images.unsplash.com/photo-1621905251189-08b45249ff78?w=600&q=75&auto=format',
-  cleaning:    'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=75&auto=format',
-  tutor:       'https://images.unsplash.com/photo-1588072432836-e10032774350?w=600&q=75&auto=format',
-  handyman:    'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&q=75&auto=format',
-  it:          'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=75&auto=format',
-  beauty:      'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=75&auto=format',
-  wellness:    'https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=600&q=75&auto=format',
-  moving:      'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=75&auto=format',
-  garden:      'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=75&auto=format',
-  painting:    'https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&q=75&auto=format',
-  carpentry:   'https://images.unsplash.com/photo-1540496905036-5937c10647cc?w=600&q=75&auto=format',
-  default:     'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&q=75&auto=format',
-};
-
 // Small inline placeholder so cards never render as a "black box" if all URLs fail.
 const IMAGE_PLACEHOLDER =
   'data:image/svg+xml;charset=utf-8,' +
@@ -41,14 +24,6 @@ const IMAGE_PLACEHOLDER =
       </text>
     </svg>`
   );
-
-function getCategoryImage(category = '') {
-  const key = category.toLowerCase();
-  for (const [k, url] of Object.entries(CATEGORY_IMAGES)) {
-    if (k !== 'default' && key.includes(k)) return url;
-  }
-  return CATEGORY_IMAGES.default;
-}
 
 export default function ServicesPage() {
   const { user, token } = useAuth();
@@ -241,22 +216,12 @@ export default function ServicesPage() {
               {/* Category hero image */}
               <div className="card-img-wrap">
                 <img
-                  src={s.imageUrl || getCategoryImage(s.categoryName || s.category)}
+                  src={s.imageUrl || IMAGE_PLACEHOLDER}
                   alt={s.category || 'Service'}
                   className="card-img"
                   loading="lazy"
                   onError={e => {
-                    const img = e.currentTarget;
-                    const fallback = getCategoryImage(s.categoryName || s.category);
-
-                    // Avoid infinite error loop if both `imageUrl` and `fallback` fail.
-                    if (img.dataset.didFallback === 'true' || img.src === fallback) {
-                      img.src = IMAGE_PLACEHOLDER;
-                      return;
-                    }
-
-                    img.dataset.didFallback = 'true';
-                    img.src = fallback;
+                    e.currentTarget.src = IMAGE_PLACEHOLDER;
                   }}
                 />
                 {s.category && (
