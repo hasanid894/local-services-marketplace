@@ -61,15 +61,16 @@ class ServiceDatabaseRepository extends DatabaseRepository {
   }
 
   /**
-   * Filter by categoryId, location, and/or providerId using SQL WHERE.
-   * Also support category name lookup via JOIN with categories table.
+   * Filter by categoryId or category name, location, and/or providerId using SQL WHERE.
+   * Supports category-name lookup via JOIN with categories table.
    */
-  async getFiltered({ categoryId, location, providerId, activeOnly = true } = {}) {
+  async getFiltered({ categoryId, category, location, providerId, activeOnly = true } = {}) {
     const conditions = [];
     const values     = [];
 
     if (activeOnly)   { conditions.push(`s.is_active = TRUE`); }
     if (categoryId)   { conditions.push(`s.category_id = $${values.length + 1}`);  values.push(Number(categoryId)); }
+    if (category)     { conditions.push(`c.name ILIKE $${values.length + 1}`);      values.push(`%${String(category).trim()}%`); }
     if (location)     { conditions.push(`s.location ILIKE $${values.length + 1}`); values.push(`%${location}%`); }
     if (providerId)   { conditions.push(`s.provider_id = $${values.length + 1}`);  values.push(Number(providerId)); }
 
@@ -139,10 +140,14 @@ class ServiceFileRepository extends FileRepository {
     );
   }
 
-  getFiltered({ categoryId, location, providerId, activeOnly = true } = {}) {
+  getFiltered({ categoryId, category, location, providerId, activeOnly = true } = {}) {
     let data = this.getAll();
     if (activeOnly)  data = data.filter(s => s.isActive);
     if (categoryId)  data = data.filter(s => s.categoryId === Number(categoryId));
+    if (category) {
+      const needle = String(category).trim().toLowerCase();
+      data = data.filter((s) => String(s.category || '').toLowerCase().includes(needle));
+    }
     if (location)    data = data.filter(s => s.location && s.location.toLowerCase().includes(location.toLowerCase()));
     if (providerId)  data = data.filter(s => s.providerId === Number(providerId));
     return data;

@@ -27,13 +27,14 @@ function parseId(req, res) {
 
 /**
  * GET /api/services
- * Query params: categoryId, location, providerId, activeOnly
+ * Query params: categoryId, category, location, providerId, activeOnly
  */
 exports.getServices = async (req, res) => {
   try {
-    const { categoryId, location, providerId, activeOnly } = req.query;
+    const { categoryId, category, location, providerId, activeOnly } = req.query;
     const filter = {
       categoryId: categoryId || undefined,
+      category: category || undefined,
       location: location || undefined,
       providerId: providerId || undefined,
       activeOnly: activeOnly !== 'false', // default true

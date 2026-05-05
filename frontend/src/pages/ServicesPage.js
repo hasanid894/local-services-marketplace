@@ -67,19 +67,20 @@ export default function ServicesPage() {
 
   useEffect(() => { fetchServices(); }, []);
 
-  const handleFilter = (e) => { e.preventDefault(); fetchServices(); };
-
   const normalizedSearch = searchTerm.trim().toLowerCase();
+  const normalizedCategoryFilter = filters.category.trim().toLowerCase();
+  const normalizedLocationFilter = filters.location.trim().toLowerCase();
   const visibleServices = services.filter(s => {
-    if (!normalizedSearch) return true;
+    const category = String(s.categoryName || s.category || '').toLowerCase();
+    const location = String(s.location || '').toLowerCase();
     const title = String(s.title || '').toLowerCase();
     const description = String(s.description || '').toLowerCase();
-    const category = String(s.categoryName || s.category || '').toLowerCase();
-    return (
-      title.includes(normalizedSearch) ||
-      description.includes(normalizedSearch) ||
-      category.includes(normalizedSearch)
-    );
+
+    if (normalizedCategoryFilter && !category.includes(normalizedCategoryFilter)) return false;
+    if (normalizedLocationFilter && !location.includes(normalizedLocationFilter)) return false;
+
+    if (!normalizedSearch) return true;
+    return title.includes(normalizedSearch) || description.includes(normalizedSearch) || category.includes(normalizedSearch);
   });
 
   const handleSubmit = async (e) => {
@@ -140,14 +141,21 @@ export default function ServicesPage() {
 
       <section className="panel">
         <h2>Search &amp; filter</h2>
-        <form onSubmit={handleFilter} className="row">
+        <div className="row">
           <input placeholder="Filter by category" value={filters.category}
             onChange={e => setFilters({ ...filters, category: e.target.value })} />
           <input placeholder="Filter by location" value={filters.location}
             onChange={e => setFilters({ ...filters, location: e.target.value })} />
-          <button type="submit">Apply</button>
-          <button type="button" className="ghost" onClick={() => { setFilters({ category: '', location: '' }); fetchServices(); }}>Clear</button>
-        </form>
+          {(filters.category.trim() || filters.location.trim()) && (
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => setFilters({ category: '', location: '' })}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
         <div className="row" style={{ marginTop: '0.75rem' }}>
           <input
             placeholder="Search by service title or description"
