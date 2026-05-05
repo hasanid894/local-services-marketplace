@@ -38,16 +38,45 @@ class Service {
   }
 
   static fromCSV(line) {
-    const [id, providerId, categoryId, title, description, price, location, latitude, longitude, isActive, createdAt] = line.split(',');
-    return new Service(
-      Number(id), Number(providerId), Number(categoryId),
-      title, description, Number(price),
+    const parts = line.split(',');
+
+    // Current format:
+    // id,providerId,categoryId,title,description,price,location,latitude,longitude,isActive,createdAt
+    if (parts.length >= 11) {
+      const [id, providerId, categoryId, title, description, price, location, latitude, longitude, isActive, createdAt] = parts;
+      return new Service(
+        Number(id),
+        Number(providerId),
+        Number(categoryId),
+        title,
+        description,
+        Number(price),
+        location || '',
+        latitude ? Number(latitude) : null,
+        longitude ? Number(longitude) : null,
+        String(isActive).toLowerCase() === 'true',
+        createdAt
+      );
+    }
+
+    // Legacy format (kept for backward compatibility):
+    // id,providerId,title,description,category,location,price,status,createdAt
+    const [id, providerId, title, description, category, location, price, status, createdAt] = parts;
+    const service = new Service(
+      Number(id),
+      Number(providerId),
+      null,
+      title || '',
+      description || '',
+      Number(price),
       location || '',
-      latitude  ? Number(latitude)  : null,
-      longitude ? Number(longitude) : null,
-      isActive === 'true',
+      null,
+      null,
+      String(status || '').toLowerCase() !== 'inactive',
       createdAt
     );
+    service.category = category || '';
+    return service;
   }
 
   static csvHeader() {
