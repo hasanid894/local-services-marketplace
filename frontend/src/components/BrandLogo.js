@@ -1,7 +1,9 @@
 import { useId } from 'react';
 
+const LOGO_SRC = `${process.env.PUBLIC_URL || ''}/brand-logo.png`;
+
 /**
- * Brand mark: gradient tile + map pin (place-based local marketplace).
+ * Brand mark: gradient tile + map pin (fallback / decorative SVG).
  */
 export function BrandMark({ size = 40, className = '' }) {
   const gid = useId();
@@ -31,10 +33,20 @@ export function BrandMark({ size = 40, className = '' }) {
   );
 }
 
+/**
+ * Raster artwork + typed site name (same layout as before the custom logo).
+ */
 export default function BrandLogo({ compact = false }) {
   return (
-    <span className={`brand-logo-lockup ${compact ? 'is-compact' : ''}`}>
-      <BrandMark size={compact ? 32 : 36} />
+    <span className={`brand-logo-lockup ${compact ? 'is-compact' : ''}`.trim()}>
+      <img
+        src={LOGO_SRC}
+        alt=""
+        className={`brand-logo-image ${compact ? 'brand-logo-image--compact' : ''}`.trim()}
+        decoding="async"
+        width={120}
+        height={44}
+      />
       <span className="brand-logo-text">
         <span className="brand-logo-name">Local Services</span>
         <span className="brand-logo-sub">Marketplace</span>

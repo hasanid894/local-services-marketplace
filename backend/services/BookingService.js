@@ -3,6 +3,15 @@
  * All methods async.
  * Status values (matching DB CHECK): 'pending' | 'confirmed' | 'completed' | 'cancelled'
  */
+const VALID_PREFERRED_TIMES = new Set(['morning', 'afternoon', 'evening', 'flexible']);
+const NOTE_MAX = 4000;
+
+function clipNote(s, max = NOTE_MAX) {
+  const t = String(s ?? '').trim();
+  if (!t.length) return '';
+  return t.length <= max ? t : t.slice(0, max);
+}
+
 class BookingService {
   constructor(repository) {
     this.repository = repository;
@@ -32,10 +41,40 @@ class BookingService {
     return all.filter(b => b.providerId === Number(providerId));
   }
 
-  async createBooking({ userId, serviceId, providerId, scheduledDate, totalPrice }) {
+  async createBooking(body) {
+    const {
+      userId,
+      serviceId,
+      providerId,
+      scheduledDate,
+      totalPrice,
+      jobAddress,
+      jobCity,
+      preferredTime,
+      customerNotes,
+      accessNotes,
+      notes,
+    } = body || {};
+
     if (!userId || !serviceId || !providerId || !scheduledDate) {
       throw new Error('userId, serviceId, providerId, and scheduledDate are required.');
     }
+
+    const addr = String(jobAddress ?? '').trim();
+    const city = String(jobCity ?? '').trim();
+    if (addr.length < 5) {
+      throw new Error('Please enter the full street address where the provider should arrive (at least 5 characters).');
+    }
+    if (city.length < 2) {
+      throw new Error('Please enter the city or area.');
+    }
+
+    const slot = String(preferredTime || 'flexible').toLowerCase();
+    if (!VALID_PREFERRED_TIMES.has(slot)) {
+      throw new Error('Preferred time must be morning, afternoon, evening, or flexible.');
+    }
+
+    const mergedCustomerNotes = clipNote(customerNotes ?? notes ?? '');
 
     return this.repository.add({
       userId:        Number(userId),
@@ -44,6 +83,11 @@ class BookingService {
       scheduledDate,
       status:        'pending',
       totalPrice:    totalPrice ? Number(totalPrice) : null,
+      jobAddress:    addr,
+      jobCity:       city,
+      preferredTime: slot,
+      customerNotes: mergedCustomerNotes,
+      accessNotes:   clipNote(accessNotes),
     });
   }
 

@@ -47,11 +47,17 @@ exports.getBookingById = async (req, res) => {
 
 /**
  * POST /api/bookings
- * Body: { userId, serviceId, providerId, scheduledDate, totalPrice }
+ * Body: { userId, serviceId, providerId, scheduledDate, totalPrice,
+ *          jobAddress, jobCity, preferredTime, customerNotes, accessNotes }
  */
 exports.createBooking = async (req, res) => {
   try {
-    const created = await bookingService.createBooking(req.body);
+    const body = { ...req.body };
+    const role = String(req.user.role || '').toLowerCase();
+    if (role === 'customer') {
+      body.userId = req.user.id;
+    }
+    const created = await bookingService.createBooking(body);
     // Notify after successful booking creation (Weakness 7 fix)
     notificationService.notifyBookingCreated(created);
     res.status(201).json(created);

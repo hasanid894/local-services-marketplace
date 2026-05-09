@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import HomePage from './pages/HomePage';
 import ServicesPage from './pages/ServicesPage';
 import LoginPage from './pages/LoginPage';
@@ -19,6 +20,7 @@ function ProtectedRoute({ children }) {
 function AppRoutes() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <div className="app-shell">
         <Navbar />
         <main className="main-content">

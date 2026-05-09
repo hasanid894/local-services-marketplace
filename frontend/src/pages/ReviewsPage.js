@@ -212,7 +212,8 @@ export default function ReviewsPage() {
                   <option value="">— choose a booking —</option>
                   {myBookings.map((b) => (
                     <option key={b.id} value={String(b.id)}>
-                      {b.serviceTitle || `Service #${b.serviceId}`} · {b.status}
+                      #{b.id} — {b.serviceTitle || `Service #${b.serviceId}`}
+                      {b.jobCity ? ` · ${b.jobCity}` : ''}
                     </option>
                   ))}
                 </select>

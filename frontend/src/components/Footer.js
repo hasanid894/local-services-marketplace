@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BrandMark } from './BrandLogo';
 
 export default function Footer() {
   const { user } = useAuth();
@@ -11,7 +10,14 @@ export default function Footer() {
       <div className="footer-inner">
         <div className="footer-brand">
           <Link to="/" className="footer-logo-link">
-            <BrandMark size={36} />
+            <img
+              src={`${process.env.PUBLIC_URL || ''}/brand-logo.png`}
+              alt=""
+              className="footer-brand-logo-img"
+              decoding="async"
+              width={120}
+              height={44}
+            />
             <span className="footer-brand-text">
               <span className="footer-brand-name">Local Services</span>
               <span className="footer-brand-sub">Marketplace</span>

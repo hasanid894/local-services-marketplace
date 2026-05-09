@@ -51,6 +51,11 @@ CREATE TABLE bookings (
         status IN ('pending', 'confirmed', 'completed', 'cancelled')
     ),
     total_price DECIMAL(10,2),
+    job_address TEXT DEFAULT '' NOT NULL,
+    job_city VARCHAR(120) DEFAULT '' NOT NULL,
+    preferred_time VARCHAR(20) DEFAULT 'flexible' NOT NULL,
+    customer_notes TEXT DEFAULT '' NOT NULL,
+    access_notes TEXT DEFAULT '' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,

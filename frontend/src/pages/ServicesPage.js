@@ -249,7 +249,12 @@ export default function ServicesPage() {
                   <button
                     className="btn-book"
                     onClick={() => navigate('/bookings', {
-                      state: { serviceId: s.id, providerId: s.providerId, serviceTitle: s.title }
+                      state: {
+                        serviceId: s.id,
+                        providerId: s.providerId,
+                        serviceTitle: s.title,
+                        serviceAreaHint: s.location?.trim() || '',
+                      },
                     })}
                   >
                     Book

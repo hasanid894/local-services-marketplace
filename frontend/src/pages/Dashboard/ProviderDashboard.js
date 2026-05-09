@@ -145,7 +145,14 @@ export default function ProviderDashboard() {
                       <div>
                         <span className="dash-list-title">Booking #{b.id}</span>
                         <span className="dash-list-meta">
-                          {b.serviceTitle || `Service #${b.serviceId}`} · {b.scheduledDate ? b.scheduledDate.slice(0, 10) : '—'}
+                          {b.serviceTitle || `Service #${b.serviceId}`} ·{' '}
+                          {(b.jobCity || b.jobAddress) ? (
+                            <>
+                              📍 {[b.jobAddress, b.jobCity].filter(Boolean).slice(0, 2).join(', ')}
+                              {' '}·{' '}
+                            </>
+                          ) : null}
+                          {b.scheduledDate ? b.scheduledDate.slice(0, 10) : '—'}
                         </span>
                       </div>
                       <span className={`status-pill status-pill-${String(b.status).toLowerCase()}`}>

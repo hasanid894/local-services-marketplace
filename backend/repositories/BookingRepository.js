@@ -1,31 +1,38 @@
 const path               = require('path');
 const FileRepository     = require('./FileRepository');
 const DatabaseRepository = require('./DatabaseRepository');
-const Booking            = require('../models/Booking');
+const Booking = require('../models/Booking');
 const { query }          = require('../config/db');
 
 // ── Column mapping ───────────────────────────────────────────────────────────
 
 /**
  * DB columns: id, user_id, service_id, provider_id, scheduled_date,
- *             status, total_price, created_at
+ *             status, total_price, job_address, job_city, preferred_time,
+ *             customer_notes, access_notes, created_at
  * Status values: 'pending' | 'confirmed' | 'completed' | 'cancelled'
  */
 function mapRow(row) {
   return {
-    id:            row.id,
-    userId:        row.user_id,
-    serviceId:     row.service_id,
-    providerId:    row.provider_id,
-    scheduledDate: row.scheduled_date,
-    status:        row.status,       // lowercase
-    totalPrice:    row.total_price ? parseFloat(row.total_price) : null,
-    createdAt:     row.created_at,
+    id:             row.id,
+    userId:         row.user_id,
+    serviceId:      row.service_id,
+    providerId:     row.provider_id,
+    scheduledDate:  row.scheduled_date,
+    status:         row.status,
+    totalPrice:     row.total_price != null ? parseFloat(row.total_price) : null,
+    jobAddress:     row.job_address ?? '',
+    jobCity:        row.job_city ?? '',
+    preferredTime:  row.preferred_time || 'flexible',
+    customerNotes:  row.customer_notes ?? '',
+    accessNotes:    row.access_notes ?? '',
+    createdAt:      row.created_at,
   };
 }
 
 const INSERT_COLS = [
   'user_id', 'service_id', 'provider_id', 'scheduled_date', 'status', 'total_price',
+  'job_address', 'job_city', 'preferred_time', 'customer_notes', 'access_notes',
 ];
 
 function toDbRow(entity) {
@@ -36,6 +43,11 @@ function toDbRow(entity) {
     entity.scheduledDate,
     (entity.status || 'pending').toLowerCase(),
     entity.totalPrice ?? null,
+    entity.jobAddress ?? '',
+    entity.jobCity ?? '',
+    entity.preferredTime || 'flexible',
+    entity.customerNotes ?? '',
+    entity.accessNotes ?? '',
   ];
 }
 
@@ -45,6 +57,7 @@ function toDbRow(entity) {
 const BOOKING_ALLOWED_COLS = new Set([
   'user_id', 'service_id', 'provider_id',
   'scheduled_date', 'status', 'total_price',
+  'job_address', 'job_city', 'preferred_time', 'customer_notes', 'access_notes',
 ]);
 
 class BookingDatabaseRepository extends DatabaseRepository {
@@ -57,10 +70,12 @@ class BookingDatabaseRepository extends DatabaseRepository {
     return query(
       `SELECT b.*,
               s.title  AS service_title,
-              u.name   AS provider_name
+              u.name   AS provider_name,
+              cu.name  AS customer_name
        FROM bookings b
        LEFT JOIN services s ON s.id = b.service_id
        LEFT JOIN users    u ON u.id = b.provider_id
+       LEFT JOIN users    cu ON cu.id = b.user_id
        ${whereClause}
        ORDER BY b.created_at DESC`,
       params
@@ -72,6 +87,7 @@ class BookingDatabaseRepository extends DatabaseRepository {
       ...mapRow(row),
       serviceTitle: row.service_title || null,
       providerName: row.provider_name || null,
+      customerName: row.customer_name || null,
     };
   }
 
@@ -93,12 +109,17 @@ class BookingDatabaseRepository extends DatabaseRepository {
 
   async update(id, updatedData) {
     const colMap = {
-      userId:        'user_id',
-      serviceId:     'service_id',
-      providerId:    'provider_id',
-      scheduledDate: 'scheduled_date',
-      status:        'status',
-      totalPrice:    'total_price',
+      userId:          'user_id',
+      serviceId:       'service_id',
+      providerId:      'provider_id',
+      scheduledDate:   'scheduled_date',
+      status:          'status',
+      totalPrice:      'total_price',
+      jobAddress:      'job_address',
+      jobCity:         'job_city',
+      preferredTime:   'preferred_time',
+      customerNotes:   'customer_notes',
+      accessNotes:     'access_notes',
     };
     const sqlData = {};
     for (const [key, val] of Object.entries(updatedData)) {
@@ -126,6 +147,18 @@ class BookingFileRepository extends FileRepository {
 
   getByProviderId(providerId) {
     return this.getAll().filter(b => b.providerId === Number(providerId));
+  }
+
+  /** Normalize to Booking so FileRepository saves full CSV rows with quoting. */
+  add(entity) {
+    const booking = entity instanceof Booking
+      ? entity
+      : new Booking({
+        ...entity,
+        preferredTime: entity.preferredTime || 'flexible',
+        createdAt: entity.createdAt || new Date().toISOString(),
+      });
+    return super.add(booking);
   }
 }
 

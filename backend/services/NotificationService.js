@@ -23,7 +23,13 @@ class NotificationService {
    * @param {object} booking - booking-u i krijuar
    */
   notifyBookingCreated(booking) {
-    this._log(`📅 New booking #${booking.id} created for service #${booking.serviceId} by user #${booking.userId}.`);
+    const where = booking.jobCity
+      ? `${booking.jobAddress ? booking.jobAddress + ', ' : ''}${booking.jobCity}`
+      : booking.jobAddress || '(no location set)';
+    const when = booking.preferredTime ? ` • ${booking.preferredTime}` : '';
+    this._log(
+      `📅 New booking #${booking.id} — ${where}${when} · service #${booking.serviceId} · user #${booking.userId}.`
+    );
   }
 
   /**
