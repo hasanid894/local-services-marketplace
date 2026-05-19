@@ -16,7 +16,19 @@ CREATE TABLE users (
     latitude DECIMAL(9,6) CHECK (latitude BETWEEN -90 AND 90),
     longitude DECIMAL(9,6) CHECK (longitude BETWEEN -180 AND 180),
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_suspended BOOLEAN NOT NULL DEFAULT FALSE,
+    phone VARCHAR(30) DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE favorite_providers (
+    user_id INT NOT NULL,
+    provider_id INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, provider_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (provider_id) REFERENCES users(id) ON DELETE CASCADE,
+    CHECK (user_id <> provider_id)
 );
 
 CREATE TABLE categories (

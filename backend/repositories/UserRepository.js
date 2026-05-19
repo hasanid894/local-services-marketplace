@@ -9,7 +9,7 @@ const { query }          = require('../config/db');
 /**
  * Map a DB snake_case row → JS camelCase plain object.
  * DB: id, name, email, password_hash, role, location,
- *     latitude, longitude, is_verified, created_at
+ *     latitude, longitude, is_verified, is_suspended, phone, created_at
  */
 function mapRow(row) {
   return {
@@ -21,14 +21,16 @@ function mapRow(row) {
     location:     row.location  || '',
     latitude:     row.latitude  ? parseFloat(row.latitude)  : null,
     longitude:    row.longitude ? parseFloat(row.longitude) : null,
+    phone:        row.phone     || null,
     isVerified:   row.is_verified,
+    isSuspended:  row.is_suspended != null ? !!row.is_suspended : false,
     createdAt:    row.created_at,
   };
 }
 
 const INSERT_COLS = [
   'name', 'email', 'password_hash', 'role',
-  'location', 'latitude', 'longitude', 'is_verified',
+  'location', 'latitude', 'longitude', 'is_verified', 'phone',
 ];
 
 function toDbRow(entity) {
@@ -41,6 +43,7 @@ function toDbRow(entity) {
     entity.latitude   ?? null,
     entity.longitude  ?? null,
     entity.isVerified ?? false,
+    entity.phone      || null,
   ];
 }
 
@@ -49,7 +52,7 @@ function toDbRow(entity) {
 // Valid snake_case columns that may appear in UPDATE SET clauses (Weakness 6 fix)
 const USER_ALLOWED_COLS = new Set([
   'name', 'email', 'password_hash', 'role',
-  'location', 'latitude', 'longitude', 'is_verified',
+  'location', 'latitude', 'longitude', 'is_verified', 'is_suspended', 'phone',
 ]);
 
 class UserDatabaseRepository extends DatabaseRepository {
@@ -76,7 +79,9 @@ class UserDatabaseRepository extends DatabaseRepository {
       location:     'location',
       latitude:     'latitude',
       longitude:    'longitude',
+      phone:        'phone',
       isVerified:   'is_verified',
+      isSuspended:  'is_suspended',
     };
     const sqlData = {};
     for (const [key, val] of Object.entries(updatedData)) {

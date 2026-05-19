@@ -37,7 +37,12 @@ class NotificationService {
    * @param {object} booking - booking-u i përditësuar
    */
   notifyBookingStatusChanged(booking) {
-    this._log(`🔔 Booking #${booking.id} status changed to "${booking.status}".`);
+    const cu = booking.userId ?? booking.user_id;
+    const pr = booking.providerId ?? booking.provider_id;
+    this._log(
+      `🔔 Booking #${booking.id} is now "${booking.status}". ` +
+      `Stub notify → customer user #${cu} & provider #${pr} (replace with email/push in production).`
+    );
   }
 
   /**

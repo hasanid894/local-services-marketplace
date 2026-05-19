@@ -10,7 +10,10 @@
     "db:test": "node config/db.js",
     "db:check": "node config/checkDb.js",
     "db:schema": "node config/applySchema.js",
-    "db:migrate:booking-job-details": "node config/migrateBookingJobDetails.js"
+    "db:migrate:booking-job-details": "node config/migrateBookingJobDetails.js",
+    "db:migrate:user-stories": "node config/migrateUserStories.js",
+    "db:migrate:favorite-providers": "node config/migrateFavoriteProviders.js",
+    "db:migrate:phone-field": "node config/migratePhoneField.js"
   },
   "keywords": [],
   "author": "",

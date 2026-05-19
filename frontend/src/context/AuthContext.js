@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -36,6 +36,16 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user');
   };
 
+  const updateSessionUser = useCallback((partial) => {
+    setUser((prev) => {
+      const next = { ...prev, ...partial };
+      try {
+        localStorage.setItem('user', JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
   const authHeaders = (extra = {}) => ({
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -43,7 +53,7 @@ export function AuthProvider({ children }) {
   });
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, authHeaders }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateSessionUser, authHeaders }}>
       {children}
     </AuthContext.Provider>
   );

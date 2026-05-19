@@ -2,7 +2,7 @@
  * User Model — aligned with the actual `users` PostgreSQL table.
  *
  * DB columns: id, name, email, password_hash, role, location,
- *             latitude, longitude, is_verified, created_at
+ *             latitude, longitude, is_verified, is_suspended, created_at
  *
  * Roles are lowercase in the DB: 'customer' | 'provider' | 'admin'
  */
@@ -16,8 +16,9 @@ class User {
     location   = '',
     latitude   = null,
     longitude  = null,
-    isVerified = false,
-    createdAt  = new Date().toISOString()
+    isVerified   = false,
+    isSuspended  = false,
+    createdAt    = new Date().toISOString()
   ) {
     this.id          = id;
     this.name        = name;
@@ -28,6 +29,7 @@ class User {
     this.latitude    = latitude;
     this.longitude   = longitude;
     this.isVerified  = isVerified;
+    this.isSuspended = isSuspended;
     this.createdAt   = createdAt;
   }
 
@@ -44,6 +46,7 @@ class User {
       latitude  ? Number(latitude)  : null,
       longitude ? Number(longitude) : null,
       isVerified === 'true',
+      false,
       createdAt
     );
   }

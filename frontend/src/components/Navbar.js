@@ -56,6 +56,7 @@ export default function Navbar() {
             {user && (
               <>
                 <Link to="/dashboard" className={linkClass('/dashboard')} onClick={closeMenu}>Dashboard</Link>
+                <Link to="/profile" className={linkClass('/profile')} onClick={closeMenu}>Profile</Link>
                 <Link to="/bookings" className={linkClass('/bookings')} onClick={closeMenu}>Bookings</Link>
               </>
             )}

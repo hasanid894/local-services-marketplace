@@ -17,10 +17,10 @@ class AuthService {
 
   /**
    * Register a new user.
-   * @param {{ name, email, password, role, location, latitude, longitude }} body
+   * @param {{ name, email, password, role, location, latitude, longitude, phone }} body
    * @returns {{ user, token }}
    */
-  async register({ name, email, password, role = 'customer', location = '', latitude = null, longitude = null }) {
+  async register({ name, email, password, role = 'customer', location = '', latitude = null, longitude = null, phone = null }) {
     if (!name    || name.trim().length < 2) throw new Error('Name must be at least 2 characters.');
     if (!email   || !email.trim())          throw new Error('Email is required.');
     if (!password || password.length < 6)   throw new Error('Password must be at least 6 characters.');
@@ -48,6 +48,7 @@ class AuthService {
       location:  location || '',
       latitude:  latitude  ?? null,
       longitude: longitude ?? null,
+      phone:     phone ? String(phone).trim() : null,
       isVerified: false,
     });
 
@@ -70,6 +71,10 @@ class AuthService {
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) throw new Error('Invalid email or password.');
+
+    if (user.isSuspended) {
+      throw new Error('This account has been suspended. Contact support if you believe this is a mistake.');
+    }
 
     const token = this._signToken(user);
     const { passwordHash: _omit, ...safeUser } = user;

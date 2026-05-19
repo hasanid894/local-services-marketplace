@@ -65,11 +65,26 @@ export default function AdminDashboard() {
     return m;
   }, [bookings]);
 
-  const recentUsers = useMemo(
+  const suspendUserRow = async (u, suspend) => {
+    setError('');
+    const label = suspend ? 'suspend' : 'unsuspend';
+    if (!window.confirm(`${label.charAt(0).toUpperCase() + label.slice(1)} account ${u.email}?`)) return;
+    const { ok, data } = await api.updateUser(u.id, { isSuspended: suspend }, token);
+    if (!ok) { setError(data?.error || 'Update failed.'); return; }
+    setUsers((prev) => prev.map((x) => (Number(x.id) === Number(u.id) ? { ...x, ...data } : x)));
+  };
+
+  const removeUserAccount = async (u) => {
+    setError('');
+    if (!window.confirm(`Permanently delete account ${u.email}? This removes their bookings cascade.`)) return;
+    const { ok, data } = await api.deleteUser(u.id, token);
+    if (!ok) { setError(data?.error || 'Delete failed.'); return; }
+    setUsers((prev) => prev.filter((x) => Number(x.id) !== Number(u.id)));
+  };
+
+  const sortedUsers = useMemo(
     () =>
-      [...users]
-        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
-        .slice(0, 6),
+      [...users].sort((a, b) => String(a.email || '').localeCompare(String(b.email || ''))),
     [users]
   );
 
@@ -149,24 +164,42 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="dash-panel">
+            <div className="dash-panel dash-panel-span">
               <div className="dash-panel-head">
-                <h2>Recent accounts</h2>
+                <h2>Accounts & moderation</h2>
                 <span className="dash-panel-meta">{users.length} total</span>
               </div>
-              {recentUsers.length === 0 ? (
+              {users.length === 0 ? (
                 <p className="dash-empty">No user records loaded.</p>
               ) : (
                 <ul className="dash-list dash-list-admin">
-                  {recentUsers.map((u) => (
-                    <li key={u.id} className="dash-list-row">
+                  {sortedUsers.map((u) => (
+                    <li key={u.id} className="dash-list-row dash-list-admin-row" style={{ flexWrap: 'wrap', rowGap: '0.65rem' }}>
                       <div>
-                        <span className="dash-list-title">{u.name || u.email}</span>
+                        <span className="dash-list-title">
+                          {u.name || u.email}
+                          {u.isSuspended && (
+                            <span className="status-pill status-pill-cancelled" style={{ marginLeft: '0.5rem' }}>
+                              Suspended
+                            </span>
+                          )}
+                        </span>
                         <span className="dash-list-meta">{u.email}</span>
                       </div>
                       <span className={`role-chip role-chip-${String(u.role).toLowerCase()}`}>
                         {u.role}
                       </span>
+                      <div className="admin-user-actions" style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                        <button type="button" className="ghost" onClick={() => suspendUserRow(u, true)} disabled={u.isSuspended}>
+                          Suspend
+                        </button>
+                        <button type="button" className="ghost" onClick={() => suspendUserRow(u, false)} disabled={!u.isSuspended}>
+                          Unsuspend
+                        </button>
+                        <button type="button" className="danger" onClick={() => removeUserAccount(u)}>
+                          Delete user
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>

@@ -71,7 +71,28 @@ export const api = {
     method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
   }),
 
-  // ── Users (admin / platform views) ───────────────────────────────────
-  getUsers:     (token) => safeFetch(`${BASE}/users`, { headers: { Authorization: `Bearer ${token}` } }),
-  getProviders: ()      => safeFetch(`${BASE}/users/providers`),
+  // ── Users / profile ────────────────────────────────────────────────────
+  getPublicProviderProfile: (id) => safeFetch(`${BASE}/users/public/providers/${id}`),
+  getUsers:       (token) => safeFetch(`${BASE}/users`, { headers: { Authorization: `Bearer ${token}` } }),
+  getUserById:    (id, token) => safeFetch(`${BASE}/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
+  updateUser:    (id, body, token) => safeFetch(`${BASE}/users/${id}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  }),
+  deleteUser:    (id, token) => safeFetch(`${BASE}/users/${id}`, {
+    method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+  }),
+
+  /** Public dropdown */
+  getProviders: () => safeFetch(`${BASE}/users/providers`),
+
+  getMyFavorites: (token) => safeFetch(`${BASE}/favorites`, { headers: { Authorization: `Bearer ${token}` } }),
+  addFavorite: (providerId, token) => safeFetch(`${BASE}/favorites`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ providerId }),
+  }),
+  removeFavorite: (providerId, token) => safeFetch(`${BASE}/favorites/${providerId}`, {
+    method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+  }),
 };

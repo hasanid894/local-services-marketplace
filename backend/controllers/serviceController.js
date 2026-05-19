@@ -8,7 +8,7 @@
  *   instantiated here. The controller has zero wiring code.
  */
 
-const { serviceService } = require('../container');
+const { serviceService, favoriteService } = require('../container');
 const CategoryRepository = require('../repositories/CategoryRepository');
 const categoryRepository = new CategoryRepository();
 
@@ -27,20 +27,36 @@ function parseId(req, res) {
 
 /**
  * GET /api/services
- * Query params: categoryId, category, location, providerId, activeOnly
+ * Query params: categoryId, category, location, providerId, activeOnly,
+ *               maxPrice, minAvgRating
  */
 exports.getServices = async (req, res) => {
   try {
-    const { categoryId, category, location, providerId, activeOnly } = req.query;
+    const { categoryId, category, location, providerId, activeOnly, maxPrice, minAvgRating } = req.query;
     const filter = {
       categoryId: categoryId || undefined,
       category: category || undefined,
       location: location || undefined,
       providerId: providerId || undefined,
       activeOnly: activeOnly !== 'false', // default true
+      maxPrice: maxPrice ?? undefined,
+      minAvgRating: minAvgRating ?? undefined,
     };
     const services = await serviceService.getAllServices(filter);
-    res.json(services);
+
+    const uid  = Number(req.user?.id || 0);
+    const role = String(req.user?.role || '').toLowerCase();
+
+    let payload = services;
+    if (favoriteService && role === 'customer' && uid > 0) {
+      const favSet = await favoriteService.providerSet(uid);
+      payload = services.map((s) => ({
+        ...s,
+        isFavorite: favSet.has(Number(s.providerId)),
+      }));
+    }
+
+    res.json(payload);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -15,10 +15,11 @@
  */
 
 // ── Repositories ─────────────────────────────────────────────────────────────
-const { createUserRepository }    = require('./repositories/UserRepository');
-const { createServiceRepository } = require('./repositories/ServiceRepository');
-const { createBookingRepository } = require('./repositories/BookingRepository');
-const { createReviewRepository }  = require('./repositories/ReviewRepository');
+const { createUserRepository }     = require('./repositories/UserRepository');
+const { createServiceRepository }  = require('./repositories/ServiceRepository');
+const { createBookingRepository }  = require('./repositories/BookingRepository');
+const { createReviewRepository }   = require('./repositories/ReviewRepository');
+const { createFavoriteRepository } = require('./repositories/FavoriteRepository');
 
 // ── Services ─────────────────────────────────────────────────────────────────
 const AuthService         = require('./services/AuthService');
@@ -27,20 +28,23 @@ const BookingService      = require('./services/BookingService');
 const ReviewService       = require('./services/ReviewService');
 const UserService         = require('./services/UserService');
 const NotificationService = require('./services/NotificationService');
+const FavoriteService     = require('./services/FavoriteService');
 
 // ── Instantiate repositories (once, at startup) ───────────────────────────────
 const userRepository    = createUserRepository();
 const serviceRepository = createServiceRepository();
 const bookingRepository = createBookingRepository();
-const reviewRepository  = createReviewRepository();
+const reviewRepository   = createReviewRepository();
+const favoriteRepository = createFavoriteRepository();
 
 // ── Instantiate services (inject repositories as constructor arguments) ────────
 const authService         = new AuthService(userRepository);
 const serviceService      = new ServiceService(serviceRepository);
 const bookingService      = new BookingService(bookingRepository);
 const reviewService       = new ReviewService(reviewRepository, bookingService);
-const userService         = new UserService(userRepository);
-const notificationService = new NotificationService();
+const userService          = new UserService(userRepository);
+const notificationService  = new NotificationService();
+const favoriteService      = new FavoriteService(favoriteRepository, userRepository);
 
 // ── Export for use in controllers ─────────────────────────────────────────────
 module.exports = {
@@ -50,4 +54,5 @@ module.exports = {
   reviewService,
   userService,
   notificationService,
+  favoriteService,
 };

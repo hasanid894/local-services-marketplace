@@ -8,7 +8,7 @@
  *   instantiated here. The controller has zero wiring code.
  */
 
-const { reviewService } = require('../container');
+const { reviewService, notificationService } = require('../container');
 
 /**
  * GET /api/reviews
@@ -45,7 +45,14 @@ exports.getReviewById = async (req, res) => {
  */
 exports.createReview = async (req, res) => {
   try {
-    const created = await reviewService.createReview(req.body);
+    const body       = { ...req.body };
+    body.userId      = req.user.id;
+    body.providerId = Number(body.providerId);
+    body.bookingId  = Number(body.bookingId);
+    body.rating      = Number(body.rating);
+
+    const created = await reviewService.createReview(body);
+    notificationService.notifyReviewPosted(created);
     res.status(201).json(created);
   } catch (err) {
     res.status(400).json({ error: err.message });

@@ -38,6 +38,7 @@ async function start() {
   app.use('/api/services', require('./routes/serviceRoutes'));
   app.use('/api/bookings', require('./routes/bookingRoutes'));
   app.use('/api/reviews', require('./routes/reviewRoutes'));
+  app.use('/api/favorites', require('./routes/favoriteRoutes'));
 
   // Error handling middleware (must be last)
   app.use(errorHandler);

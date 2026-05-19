@@ -46,14 +46,23 @@ export default function ProviderDashboard() {
     return { pending, needAction, avg, reviewCount: reviews.length };
   }, [bookings, reviews]);
 
-  const inbox = useMemo(
-    () =>
-      [...bookings]
-        .filter((b) => b.status === 'pending' || b.status === 'confirmed')
-        .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
-        .slice(0, 5),
-    [bookings]
-  );
+  const startOfTodayMs = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }, []);
+
+  const inbox = useMemo(() => {
+    const upcoming = [...bookings].filter((b) => {
+      const st = String(b.status || '').toLowerCase();
+      if (st !== 'pending' && st !== 'confirmed') return false;
+      const when = b.scheduledDate ? new Date(b.scheduledDate).getTime() : NaN;
+      return Number.isNaN(when) || when >= startOfTodayMs;
+    });
+    return upcoming
+      .sort((a, b) => String(a.scheduledDate || '').localeCompare(String(b.scheduledDate || '')))
+      .slice(0, 5);
+  }, [bookings, startOfTodayMs]);
 
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Provider';
 
@@ -133,7 +142,7 @@ export default function ProviderDashboard() {
 
             <div className="dash-panel">
               <div className="dash-panel-head">
-                <h2>Inbox preview</h2>
+                <h2>Upcoming bookings (preview)</h2>
                 <Link to="/bookings" className="dash-panel-link">Open inbox</Link>
               </div>
               {inbox.length === 0 ? (

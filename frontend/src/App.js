@@ -10,6 +10,8 @@ import RegisterPage from './pages/RegisterPage';
 import BookingsPage from './pages/BookingsPage';
 import ReviewsPage from './pages/ReviewsPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
+import ProfilePage from './pages/ProfilePage';
+import ProviderProfilePage from './pages/ProviderProfilePage';
 import './App.css';
 
 function ProtectedRoute({ children }) {
@@ -30,7 +32,9 @@ function AppRoutes() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
+          <Route path="/providers/:providerId" element={<ProviderProfilePage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

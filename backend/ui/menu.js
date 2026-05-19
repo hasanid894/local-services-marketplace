@@ -40,20 +40,24 @@ function menu() {
   rl.question('Choose an option: ', handle);
 }
 
-function handle(opt) {
+async function handle(opt) {
   switch (opt.trim()) {
     // ── 1. List ────────────────────────────────────────────────────────────
     case '1':
-      rl.question('Filter by category (leave blank for all): ', category => {
-        rl.question('Filter by location (leave blank for all): ', location => {
+      rl.question('Filter by category ID (leave blank for all): ', async categoryId => {
+        rl.question('Filter by location (leave blank for all): ', async location => {
           try {
-            const result = service.list({ category, location });
+            const filter = {};
+            if (categoryId) filter.categoryId = Number(categoryId);
+            if (location) filter.location = location;
+            
+            const result = await service.getAllServices(filter);
             if (result.length === 0) {
               console.log('No services found matching your filters.');
             } else {
               console.log(`\nFound ${result.length} service(s):`);
               result.forEach(s =>
-                console.log(`  [${s.id}] ${s.title} — ${s.category} — ${s.location} — €${s.price}`)
+                console.log(`  [${s.id}] ${s.title} — Category ID: ${s.categoryId} — ${s.location} — €${s.price}`)
               );
             }
           } catch (e) {
@@ -68,21 +72,21 @@ function handle(opt) {
     case '2':
       rl.question('Title: ', title => {
         rl.question('Price: ', priceInput => {
-          // Case 2: user types "abc" for price → clear message, no crash
           const parsedPrice = Number(priceInput);
           if (!priceInput.trim() || isNaN(parsedPrice)) {
             console.log('Error: Please enter a valid number for price.');
             return menu();
           }
 
-          rl.question('Category (optional): ', category => {
-            rl.question('Location (optional): ', location => {
+          rl.question('Category ID (number): ', async categoryIdInput => {
+            rl.question('Location (optional): ', async location => {
               try {
-                const created = service.createService({
+                const categoryId = Number(categoryIdInput) || 1; // Default to 1 if invalid
+                const created = await service.createService({
                   providerId: 1,
+                  categoryId,
                   title,
                   description: '',
-                  category: category || 'General',
                   location: location || 'Kosovo',
                   price: parsedPrice
                 });
@@ -99,15 +103,14 @@ function handle(opt) {
 
     // ── 3. Find ────────────────────────────────────────────────────────────
     case '3':
-      rl.question('Enter ID: ', idInput => {
-        // Case 3: invalid / non-numeric ID input
+      rl.question('Enter ID: ', async idInput => {
         const id = Number(idInput);
         if (!idInput.trim() || isNaN(id) || !Number.isInteger(id) || id <= 0) {
           console.log('Error: Please enter a valid ID (positive integer).');
           return menu();
         }
         try {
-          const found = service.findById(id);
+          const found = await service.getServiceById(id);
           if (!found) {
             console.log(`Item not found: no service with id ${id}.`);
           } else {
@@ -129,7 +132,7 @@ function handle(opt) {
           return menu();
         }
         rl.question('New title (leave blank to keep current): ', titleInput => {
-          rl.question('New price (leave blank to keep current): ', priceInput => {
+          rl.question('New price (leave blank to keep current): ', async priceInput => {
             const updateData = {};
             if (titleInput.trim()) updateData.title = titleInput.trim();
 
@@ -143,7 +146,7 @@ function handle(opt) {
             }
 
             try {
-              const updated = service.updateService(id, updateData);
+              const updated = await service.updateService(id, updateData);
               console.log('Service updated:', updated);
             } catch (e) {
               console.log(`Error: ${e.message}`);
@@ -156,14 +159,14 @@ function handle(opt) {
 
     // ── 5. Delete ──────────────────────────────────────────────────────────
     case '5':
-      rl.question('Enter ID to delete: ', idInput => {
+      rl.question('Enter ID to delete: ', async idInput => {
         const id = Number(idInput);
         if (!idInput.trim() || isNaN(id) || !Number.isInteger(id) || id <= 0) {
           console.log('Error: Please enter a valid ID (positive integer).');
           return menu();
         }
         try {
-          const result = service.deleteService(id);
+          const result = await service.deleteService(id);
           console.log(result.message);
         } catch (e) {
           console.log(`Error: ${e.message}`);

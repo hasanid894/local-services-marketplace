@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
@@ -31,6 +31,8 @@ export default function ServicesPage() {
 
   const [services, setServices] = useState([]);
   const [filters, setFilters] = useState({ category: '', location: '' });
+  const [priceMax, setPriceMax] = useState('');
+  const [minAvgRating, setMinAvgRating] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [form, setForm] = useState({ title: '', description: '', category: '', location: '', price: '', imageUrl: '' });
   const [editingId, setEditingId] = useState(null);
@@ -40,6 +42,7 @@ export default function ServicesPage() {
 
   const isProvider = user?.role?.toLowerCase() === 'provider';
   const isAdmin = user?.role?.toLowerCase() === 'admin';
+  const isCustomer = user?.role?.toLowerCase() === 'customer';
   const canWrite = isProvider || isAdmin;
 
   const canManageService = (s) => {
@@ -53,9 +56,17 @@ export default function ServicesPage() {
     if (filters.category.trim()) params.set('category', filters.category.trim());
     if (filters.location.trim()) params.set('location', filters.location.trim());
 
+    const cap = Number(priceMax);
+    if (priceMax.trim() && !Number.isNaN(cap) && cap > 0) params.set('maxPrice', String(cap));
+
+    const floor = Number(minAvgRating);
+    if (minAvgRating && !Number.isNaN(floor) && floor >= 1 && floor <= 5) {
+      params.set('minAvgRating', String(floor));
+    }
+
     const { ok, data } = await api.getServices(params.toString(), token);
     if (ok) {
-      setServices(data);
+      setServices(Array.isArray(data) ? data : []);
       setApiStatus('Backend connected ✓');
       setGlobalError('');
     } else {
@@ -63,9 +74,9 @@ export default function ServicesPage() {
       setApiStatus('Backend offline (start backend on port 5000)');
       setGlobalError(data?.error || 'Backend offline.');
     }
-  }, [filters, token]);
+  }, [filters.category, filters.location, priceMax, minAvgRating, token]);
 
-  useEffect(() => { fetchServices(); }, []);
+  useEffect(() => { fetchServices(); }, [fetchServices]);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const normalizedCategoryFilter = filters.category.trim().toLowerCase();
@@ -75,13 +86,32 @@ export default function ServicesPage() {
     const location = String(s.location || '').toLowerCase();
     const title = String(s.title || '').toLowerCase();
     const description = String(s.description || '').toLowerCase();
+    const providerName = String(s.providerName || '').toLowerCase();
 
     if (normalizedCategoryFilter && !category.includes(normalizedCategoryFilter)) return false;
     if (normalizedLocationFilter && !location.includes(normalizedLocationFilter)) return false;
 
     if (!normalizedSearch) return true;
-    return title.includes(normalizedSearch) || description.includes(normalizedSearch) || category.includes(normalizedSearch);
+    return title.includes(normalizedSearch) || description.includes(normalizedSearch)
+      || category.includes(normalizedSearch) || providerName.includes(normalizedSearch);
   });
+
+  const handleToggleFavorite = async (svc) => {
+    if (!isCustomer || !token) return;
+    const pid = Number(svc.providerId);
+    if (!pid) return;
+    const nextFavorite = !svc.isFavorite;
+    const { ok, data } = nextFavorite
+      ? await api.addFavorite(pid, token)
+      : await api.removeFavorite(pid, token);
+    if (!ok) {
+      setGlobalError(data?.error || 'Favorites unavailable (PostgreSQL migrations required).');
+      return;
+    }
+    fetchServices();
+  };
+
+  const hasAdvancedFilters = !!(priceMax.trim() || minAvgRating);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -168,6 +198,44 @@ export default function ServicesPage() {
             </button>
           )}
         </div>
+        <div className="row" style={{ marginTop: '0.75rem', flexWrap: 'wrap', gap: '0.65rem', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label htmlFor="filter-max-price" style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.7, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              Max price (EUR)
+            </label>
+            <input
+              id="filter-max-price"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="e.g. 100"
+              value={priceMax}
+              onChange={(e) => setPriceMax(e.target.value)}
+              style={{ maxWidth: '160px' }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label htmlFor="filter-min-rating" style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.7, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              Provider rating
+            </label>
+            <select
+              id="filter-min-rating"
+              value={minAvgRating}
+              onChange={(e) => setMinAvgRating(e.target.value)}
+              style={{ minWidth: '180px' }}
+            >
+              <option value="">⭐ Any rating</option>
+              <option value="3">⭐ 3+ stars</option>
+              <option value="4">⭐ 4+ stars</option>
+              <option value="5">⭐ 5 stars only</option>
+            </select>
+          </div>
+          {hasAdvancedFilters && (
+            <button type="button" className="ghost" style={{ alignSelf: 'flex-end' }} onClick={() => { setPriceMax(''); setMinAvgRating(''); }}>
+              Clear filters
+            </button>
+          )}
+        </div>
       </section>
 
       {/* Add / Edit Form */}
@@ -242,23 +310,50 @@ export default function ServicesPage() {
                 <div className="card-meta">
                   <span className="tag">📍 {s.location || '—'}</span>
                 </div>
+                {s.providerId && (
+                  <p className="card-meta-small" style={{ marginTop: '0.45rem' }}>
+                    <strong>Provider</strong>{' '}
+                    <Link to={`/providers/${s.providerId}`} style={{ fontWeight: 600, color: '#38bdf8' }}>
+                      {s.providerName || `Professional #${s.providerId}`}
+                    </Link>
+                    {typeof s.providerAvgRating === 'number' && !Number.isNaN(s.providerAvgRating) ? (
+                      <span> · ★ {Number(s.providerAvgRating).toFixed(1)}
+                        ({s.providerReviewCount ?? 0} reviews)</span>
+                    ) : (
+                      <span style={{ opacity: 0.7 }}> · not rated yet</span>
+                    )}
+                  </p>
+                )}
               </div>
               <div className="card-footer">
                 <strong className="price">{s.price} EUR</strong>
                 {!canManageService(s) && user && (
-                  <button
-                    className="btn-book"
-                    onClick={() => navigate('/bookings', {
-                      state: {
-                        serviceId: s.id,
-                        providerId: s.providerId,
-                        serviceTitle: s.title,
-                        serviceAreaHint: s.location?.trim() || '',
-                      },
-                    })}
-                  >
-                    Book
-                  </button>
+                  <>
+                    {isCustomer && token && (
+                      <button
+                        type="button"
+                        className="ghost"
+                        title={s.isFavorite ? 'Remove from favorites' : 'Save provider'}
+                        aria-label={s.isFavorite ? 'Remove from favorites' : 'Add provider to favorites'}
+                        onClick={() => handleToggleFavorite(s)}
+                      >
+                        {s.isFavorite ? '♥' : '♡'}
+                      </button>
+                    )}
+                    <button
+                      className="btn-book"
+                      onClick={() => navigate('/bookings', {
+                        state: {
+                          serviceId: s.id,
+                          providerId: s.providerId,
+                          serviceTitle: s.title,
+                          serviceAreaHint: s.location?.trim() || '',
+                        },
+                      })}
+                    >
+                      Book
+                    </button>
+                  </>
                 )}
                 {canManageService(s) && (
                   <div className="card-actions">

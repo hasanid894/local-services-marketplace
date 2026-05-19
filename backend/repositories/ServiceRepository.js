@@ -32,6 +32,28 @@ const INSERT_COLS = [
   'price', 'location', 'latitude', 'longitude', 'is_active', 'image_url',
 ];
 
+/** Shared JOIN shape for marketplace listings + provider aggregates. */
+const SERVICE_LIST_FROM = `
+  FROM services s
+  LEFT JOIN categories c ON c.id = s.category_id
+  LEFT JOIN users pu ON pu.id = s.provider_id
+  LEFT JOIN (
+    SELECT provider_id, AVG(rating)::double precision AS avg_rating, COUNT(*)::int AS rc
+    FROM reviews
+    GROUP BY provider_id
+  ) rv ON rv.provider_id = s.provider_id
+`;
+
+function enrichListingRow(row) {
+  return {
+    ...mapRow(row),
+    categoryName:          row.category_name || null,
+    providerName:          row.provider_name || null,
+    providerAvgRating:     row.provider_avg_rating != null ? Number(row.provider_avg_rating) : null,
+    providerReviewCount:   row.provider_review_count != null ? Number(row.provider_review_count) : null,
+  };
+}
+
 function toDbRow(entity) {
   return [
     entity.providerId,
@@ -64,7 +86,11 @@ class ServiceDatabaseRepository extends DatabaseRepository {
    * Filter by categoryId or category name, location, and/or providerId using SQL WHERE.
    * Supports category-name lookup via JOIN with categories table.
    */
-  async getFiltered({ categoryId, category, location, providerId, activeOnly = true } = {}) {
+  async getFiltered({
+    categoryId, category, location, providerId,
+    activeOnly = true,
+    maxPrice, minAvgRating,
+  } = {}) {
     const conditions = [];
     const values     = [];
 
@@ -74,38 +100,57 @@ class ServiceDatabaseRepository extends DatabaseRepository {
     if (location)     { conditions.push(`s.location ILIKE $${values.length + 1}`); values.push(`%${location}%`); }
     if (providerId)   { conditions.push(`s.provider_id = $${values.length + 1}`);  values.push(Number(providerId)); }
 
+    if (maxPrice !== undefined && maxPrice !== null && String(maxPrice).trim() !== '') {
+      const p = Number(maxPrice);
+      if (!isNaN(p) && p > 0) {
+        conditions.push(`s.price <= $${values.length + 1}`);
+        values.push(p);
+      }
+    }
+
+    const minR = Number(minAvgRating);
+    if (!Number.isNaN(minR) && minR >= 1 && minR <= 5) {
+      conditions.push(`rv.avg_rating IS NOT NULL AND rv.avg_rating >= $${values.length + 1}`);
+      values.push(minR);
+    }
+
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const sql   = `
-      SELECT s.*, c.name AS category_name
-      FROM services s
-      LEFT JOIN categories c ON c.id = s.category_id
+      SELECT s.*, c.name AS category_name,
+        pu.name AS provider_name,
+        rv.avg_rating AS provider_avg_rating,
+        rv.rc AS provider_review_count
+      ${SERVICE_LIST_FROM}
       ${where}
       ORDER BY s.id
     `;
     const res = await query(sql, values);
-    return res.rows.map(row => ({ ...mapRow(row), categoryName: row.category_name }));
+    return res.rows.map((row) => enrichListingRow(row));
   }
 
   async getAll() {
     const res = await query(`
-      SELECT s.*, c.name AS category_name
-      FROM services s
-      LEFT JOIN categories c ON c.id = s.category_id
+      SELECT s.*, c.name AS category_name,
+        pu.name AS provider_name,
+        rv.avg_rating AS provider_avg_rating,
+        rv.rc AS provider_review_count
+      ${SERVICE_LIST_FROM}
       ORDER BY s.id
     `);
-    return res.rows.map(row => ({ ...mapRow(row), categoryName: row.category_name }));
+    return res.rows.map((row) => enrichListingRow(row));
   }
 
   async getById(id) {
     const res = await query(`
-      SELECT s.*, c.name AS category_name
-      FROM services s
-      LEFT JOIN categories c ON c.id = s.category_id
+      SELECT s.*, c.name AS category_name,
+        pu.name AS provider_name,
+        rv.avg_rating AS provider_avg_rating,
+        rv.rc AS provider_review_count
+      ${SERVICE_LIST_FROM}
       WHERE s.id = $1
     `, [id]);
     if (!res.rows.length) return null;
-    const row = res.rows[0];
-    return { ...mapRow(row), categoryName: row.category_name };
+    return enrichListingRow(res.rows[0]);
   }
 
   async update(id, updatedData) {
@@ -140,7 +185,12 @@ class ServiceFileRepository extends FileRepository {
     );
   }
 
-  getFiltered({ categoryId, category, location, providerId, activeOnly = true } = {}) {
+  getFiltered({
+    categoryId, category, location, providerId,
+    activeOnly = true,
+    maxPrice,
+    minAvgRating: _minAvgRating,
+  } = {}) {
     let data = this.getAll();
     if (activeOnly)  data = data.filter(s => s.isActive);
     if (categoryId)  data = data.filter(s => s.categoryId === Number(categoryId));
@@ -150,6 +200,13 @@ class ServiceFileRepository extends FileRepository {
     }
     if (location)    data = data.filter(s => s.location && s.location.toLowerCase().includes(location.toLowerCase()));
     if (providerId)  data = data.filter(s => s.providerId === Number(providerId));
+
+    if (maxPrice !== undefined && maxPrice !== null && String(maxPrice).trim() !== '') {
+      const mp = Number(maxPrice);
+      if (!Number.isNaN(mp) && mp > 0) data = data.filter((s) => Number(s.price) <= mp);
+    }
+    /* CSV fallback has no aggregated ratings — skip minAvgRating filter in file mode. */
+
     return data;
   }
 }

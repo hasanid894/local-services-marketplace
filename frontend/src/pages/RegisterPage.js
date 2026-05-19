@@ -6,7 +6,7 @@ import { api } from '../services/api';
 export default function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'Customer', location: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'Customer', location: '', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -89,6 +89,17 @@ export default function RegisterPage() {
               placeholder="Prishtinë"
               value={form.location}
               onChange={e => setForm({ ...form, location: e.target.value })}
+            />
+          </div>
+          <div className="field">
+            <label>Phone number <span className="optional">(optional)</span></label>
+            <input
+              id="reg-phone"
+              type="tel"
+              placeholder="+383 44 123 456"
+              value={form.phone}
+              onChange={e => setForm({ ...form, phone: e.target.value })}
+              autoComplete="tel"
             />
           </div>
           <button id="reg-submit" type="submit" className="btn-primary" disabled={loading}>
